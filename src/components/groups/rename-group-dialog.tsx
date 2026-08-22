@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,7 +68,15 @@ export function RenameGroupDialog({
               size="lg"
               disabled={isLoading || !value.trim()}
             >
-              {isLoading ? "Saving..." : "Save changes"}
+              {isLoading ? (
+                <LoopChatLoader
+                  size="sm"
+                  label="Saving..."
+                  className="text-white"
+                />
+              ) : (
+                "Save changes"
+              )}
             </Button>
           </DialogFooter>
         </form>

@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import type { ChatUser } from "@/types/chat";
 
 type UserSearchProps = {
@@ -43,7 +44,9 @@ export function UserSearch({
       {value.trim() ? (
         <div className="mt-3 overflow-hidden rounded-lg border border-[#e2e8e1] bg-white shadow-sm">
           {isSearching ? (
-            <p className="px-4 py-3 text-sm text-[#7d887f]">Searching users...</p>
+            <div className="px-4 py-3">
+              <LoopChatLoader size="sm" label="Searching users..." />
+            </div>
           ) : null}
 
           {!isSearching && message ? (

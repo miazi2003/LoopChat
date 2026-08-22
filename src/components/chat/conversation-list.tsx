@@ -1,4 +1,5 @@
 import { ConversationItem } from "@/components/chat/conversation-item";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import type { Conversation } from "@/types/chat";
 
 type ConversationListProps = {
@@ -24,9 +25,12 @@ export function ConversationList({
 
       <div className="mt-2.5">
         {isLoading && conversations.length === 0 ? (
-          <p className="rounded-lg bg-white px-4 py-5 text-center text-sm text-[#7d887f]">
-            Loading conversations...
-          </p>
+          <div className="flex justify-center rounded-lg bg-white px-4 py-6">
+            <LoopChatLoader
+              size="md"
+              label="Loading conversations..."
+            />
+          </div>
         ) : null}
 
         {error && conversations.length === 0 ? (

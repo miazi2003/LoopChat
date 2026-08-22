@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -71,9 +72,9 @@ export function AddMemberPanel({
           </div>
 
           {isSearching ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Searching users...
-            </p>
+            <div className="mt-3">
+              <LoopChatLoader size="sm" label="Searching users..." />
+            </div>
           ) : null}
 
           {!isSearching && searchText.trim() && results.length === 0 ? (
@@ -148,7 +149,15 @@ export function AddMemberPanel({
               size="lg"
               disabled={isLoading || selectedMembers.length === 0}
             >
-              {isLoading ? "Adding..." : "Add members"}
+              {isLoading ? (
+                <LoopChatLoader
+                  size="sm"
+                  label="Adding..."
+                  className="text-white"
+                />
+              ) : (
+                "Add members"
+              )}
             </Button>
           </DialogFooter>
         </form>

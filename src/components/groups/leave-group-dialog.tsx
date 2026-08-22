@@ -1,3 +1,4 @@
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -44,7 +45,15 @@ export function LeaveGroupDialog({
             onClick={handleLeave}
             disabled={isLoading}
           >
-            {isLoading ? "Leaving..." : "Leave group"}
+            {isLoading ? (
+              <LoopChatLoader
+                size="sm"
+                label="Leaving..."
+                className="text-white"
+              />
+            ) : (
+              "Leave group"
+            )}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

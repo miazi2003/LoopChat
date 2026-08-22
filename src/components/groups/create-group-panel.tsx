@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import type { ChatUser } from "@/types/chat";
 
 type CreateGroupPanelProps = {
@@ -81,7 +82,9 @@ export function CreateGroupPanel({
         </div>
 
         {isSearching ? (
-          <p className="mt-2 text-sm text-[#7d887f]">Searching users...</p>
+          <div className="mt-3">
+            <LoopChatLoader size="sm" label="Searching users..." />
+          </div>
         ) : null}
 
         {!isSearching && searchText.trim() && searchResults.length === 0 ? (
@@ -129,17 +132,21 @@ export function CreateGroupPanel({
 
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
 
-        {isLoading ? (
-          <p className="mt-3 text-sm text-[#7d887f]">Creating group...</p>
-        ) : null}
-
         <button
           type="button"
           onClick={onCreate}
           disabled={isLoading || !name.trim() || selectedMembers.length < 2}
-          className="mt-5 w-full rounded-lg bg-[#35ad49] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d9e40] disabled:cursor-not-allowed disabled:bg-[#b7c2b8]"
+          className="mt-5 flex min-h-10 w-full items-center justify-center rounded-lg bg-[#35ad49] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2d9e40] disabled:cursor-not-allowed disabled:bg-[#b7c2b8]"
         >
-          {isLoading ? "Creating..." : "Create Group"}
+          {isLoading ? (
+            <LoopChatLoader
+              size="sm"
+              label="Creating..."
+              className="text-white"
+            />
+          ) : (
+            "Create Group"
+          )}
         </button>
       </section>
     </div>

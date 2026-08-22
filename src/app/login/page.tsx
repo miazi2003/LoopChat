@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import { getCurrentUser, loginUser } from "@/services/auth";
 
 export default function LoginPage() {
@@ -63,9 +64,11 @@ export default function LoginPage() {
 
   if (isCheckingToken) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-sm text-slate-600">Checking session...</p>
-      </main>
+      <LoopChatLoader
+        size="lg"
+        label="Preparing LoopChat..."
+        fullScreen
+      />
     );
   }
 
@@ -136,9 +139,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="h-13 w-full rounded-xl bg-[#3bb74d] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#32a943] disabled:cursor-not-allowed disabled:bg-[#aeb9af]"
+              className="flex h-13 w-full items-center justify-center rounded-xl bg-[#3bb74d] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#32a943] disabled:cursor-not-allowed disabled:bg-[#aeb9af]"
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <LoopChatLoader
+                  size="sm"
+                  label="Signing in..."
+                  className="text-white"
+                />
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
         </div>

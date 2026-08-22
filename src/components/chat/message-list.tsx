@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import { MessageBubble } from "@/components/chat/message-bubble";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import type { Conversation, Message } from "@/types/chat";
 
 type MessageListProps = {
@@ -32,9 +33,9 @@ export function MessageList({
       className="relative min-h-0 flex-1 overflow-y-auto bg-white px-5 py-6 sm:px-6"
     >
       {isLoading && messages.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#879088]">
-          Loading messages...
-        </p>
+        <div className="flex min-h-full items-center justify-center py-8">
+          <LoopChatLoader size="md" label="Loading messages..." />
+        </div>
       ) : null}
 
       {error && messages.length === 0 ? (

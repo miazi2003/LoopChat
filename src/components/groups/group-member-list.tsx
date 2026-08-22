@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Ellipsis, ShieldCheck, UserMinus } from "lucide-react";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -165,7 +166,15 @@ export function GroupMemberList({
               onClick={handlePromote}
               disabled={Boolean(promotingMemberId)}
             >
-              {promotingMemberId ? "Promoting..." : "Make admin"}
+              {promotingMemberId ? (
+                <LoopChatLoader
+                  size="sm"
+                  label="Promoting..."
+                  className="text-white"
+                />
+              ) : (
+                "Make admin"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -193,7 +202,15 @@ export function GroupMemberList({
               onClick={handleRemove}
               disabled={Boolean(removingMemberId)}
             >
-              {removingMemberId ? "Removing..." : "Remove member"}
+              {removingMemberId ? (
+                <LoopChatLoader
+                  size="sm"
+                  label="Removing..."
+                  className="text-white"
+                />
+              ) : (
+                "Remove member"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

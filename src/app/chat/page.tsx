@@ -10,6 +10,7 @@ import { MessageInput } from "@/components/chat/message-input";
 import { MessageList } from "@/components/chat/message-list";
 import { CreateGroupPanel } from "@/components/groups/create-group-panel";
 import { GroupInfoPanel } from "@/components/groups/group-info-panel";
+import { LoopChatLoader } from "@/components/shared/loopchat-loader";
 import { createSocket } from "@/lib/socket";
 import { getCurrentUser } from "@/services/auth";
 import {
@@ -812,9 +813,11 @@ export default function ChatPage() {
 
   if (isCheckingAuth) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-sm text-slate-600">Checking authentication...</p>
-      </main>
+      <LoopChatLoader
+        size="lg"
+        label="Preparing LoopChat..."
+        fullScreen
+      />
     );
   }
 

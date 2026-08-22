@@ -67,13 +67,13 @@ export function Navbar() {
           </a>
         </div>
 
-        <div className="flex w-[112px] shrink-0 justify-end">
+        <div className="flex w-auto shrink-0 justify-end">
           {authStatus === "loading" ? (
-            <span aria-hidden="true" className="h-10 w-[112px]" />
+            <span aria-hidden="true" className="h-10 w-auto]" />
           ) : (
             <Link
               href={authStatus === "authenticated" ? "/chat" : "/login"}
-              className=" inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-xs font-semibold text-[#083f48] shadow-sm transition hover:bg-cyan-50"
+              className=" inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#083f48] shadow-sm transition hover:bg-cyan-50"
             >
               {authStatus === "authenticated" ? "Open Chat" : "Login"}
               <ArrowRight size={15} />
