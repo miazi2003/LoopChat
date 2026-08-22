@@ -1,13 +1,15 @@
-import { MessagesSquare, Send } from "lucide-react";
+import { Send } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function ProductShowcase() {
   return (
     <div className="overflow-hidden rounded-lg border border-white/15 bg-[#f8fbfa] text-[#173b40] shadow-2xl shadow-black/20">
       <div className="flex items-center justify-between border-b border-[#d8e3e1] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <MessagesSquare size={17} className="text-[#167b8b]" />
-          <span className="text-sm font-semibold">LoopChat</span>
-        </div>
+        <BrandLogo
+          size="sm"
+          className="text-[#173b40]"
+          nameClassName="text-sm"
+        />
         <span className="flex items-center gap-1.5 text-xs font-medium text-[#397078]">
           <span className="h-2 w-2 rounded-full bg-lime-500" />
           Live

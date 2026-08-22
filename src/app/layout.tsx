@@ -8,7 +8,11 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "LoopChat",
-  description: "A real-time messaging experience for direct and group conversations."
+  description: "A real-time messaging experience for direct and group conversations.",
+  icons: {
+    icon: [{ url: "/loopchat-mark.svg", type: "image/svg+xml" }],
+    apple: "/loopchat-mark.svg"
+  }
 };
 
 export default function RootLayout({

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { getCurrentUser, loginUser } from "@/services/auth";
 
 export default function LoginPage() {
@@ -68,54 +70,89 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
-      <section className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold tracking-normal">LoopChat</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Sign in or create an account with your phone number.
-          </p>
+    <main className="grid h-dvh overflow-hidden bg-[#fbfcfa] lg:grid-cols-[1.04fr_0.96fr]">
+      <section className="flex min-h-0 items-center justify-center overflow-y-auto px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
+        <div className="w-full max-w-md">
+          <BrandLogo
+            className="text-[#172019]"
+            nameClassName="text-lg"
+          />
+
+          <div className="mt-12">
+            <h1 className="max-w-sm text-4xl font-semibold leading-[1.08] tracking-normal text-[#172019] sm:text-[2.65rem]">
+              Start a conversation.
+            </h1>
+            <p className="mt-4 max-w-sm text-base leading-7 text-[#768078]">
+              Enter your name and phone number to continue.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-9 space-y-5">
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-semibold text-[#344038]"
+              >
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="h-13 w-full rounded-xl border border-[#dce3db] bg-white px-4 text-sm text-[#263029] shadow-sm outline-none transition placeholder:text-[#a0a8a2] focus:border-[#85c590] focus:ring-3 focus:ring-[#dcefe0]"
+                placeholder="Yeasin Miazi"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="phone"
+                className="mb-2 block text-sm font-semibold text-[#344038]"
+              >
+                Phone number
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                className="h-13 w-full rounded-xl border border-[#dce3db] bg-white px-4 text-sm text-[#263029] shadow-sm outline-none transition placeholder:text-[#a0a8a2] focus:border-[#85c590] focus:ring-3 focus:ring-[#dcefe0]"
+                placeholder="+8801608072719"
+              />
+            </div>
+
+            {error ? (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="h-13 w-full rounded-xl bg-[#3bb74d] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#32a943] disabled:cursor-not-allowed disabled:bg-[#aeb9af]"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
         </div>
+      </section>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="mb-1 block text-sm font-medium">
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              placeholder="Yeasin Miazi"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="mb-1 block text-sm font-medium">
-              Phone number
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              placeholder="+8801608072719"
-            />
-          </div>
-
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isLoading ? "Signing in..." : "Continue"}
-          </button>
-        </form>
+      <section className="relative hidden min-h-0 overflow-hidden bg-[#f2f6ef] lg:flex">
+        <Image
+          src="/images/loopchat-login.png"
+          alt="A LoopChat user smiling while reading a message on her phone"
+          fill
+          priority
+          sizes="48vw"
+          className="object-contain object-bottom"
+        />
       </section>
     </main>
   );

@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, ChevronDown, MessagesSquare } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function Navbar() {
   return (
     <header className="absolute inset-x-0 top-0 z-20">
       <nav className="mx-auto flex w-full min-w-0 max-w-[100vw] items-center justify-between px-5 py-5 sm:px-8 lg:max-w-7xl lg:px-10 lg:py-7">
-        <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-[#075763]">
-            <MessagesSquare size={18} strokeWidth={2.4} />
-          </span>
-          LoopChat
+        <Link href="/" aria-label="LoopChat home">
+          <BrandLogo
+            size="sm"
+            className="text-white"
+            nameClassName="text-xl"
+          />
         </Link>
 
         <div className="hidden items-center gap-7 text-sm text-white/85 md:flex">

@@ -1,4 +1,5 @@
 import { LogOut, Plus } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { UserSearch } from "@/components/chat/user-search";
 import type { User } from "@/types/auth";
@@ -47,9 +48,11 @@ export function ChatSidebar({
     >
       <div className="flex items-center justify-between gap-3 px-1">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase text-[#339b47]">
-            LoopChat
-          </p>
+          <BrandLogo
+            size="sm"
+            className="text-[#172019]"
+            nameClassName="text-sm"
+          />
           <h1 className="mt-0.5 text-2xl font-semibold tracking-normal text-[#172019]">
             Chats
           </h1>
