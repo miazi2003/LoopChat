@@ -124,6 +124,8 @@ export default function ChatPage() {
   const selectedConversationIdRef = useRef<string | null>(null);
   const isNearBottomRef = useRef(true);
   const messageListRef = useRef<HTMLDivElement | null>(null);
+  const shouldScrollAfterRenderRef = useRef(false);
+  const conversationOpenScrollIdRef = useRef<string | null>(null);
   const selectedConversationId = selectedConversation?._id;
 
   const loadConversations = useCallback(
@@ -165,14 +167,19 @@ export default function ChatPage() {
     []
   );
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const messageList = messageListRef.current;
 
     if (!messageList) {
       return;
     }
 
-    messageList.scrollTop = messageList.scrollHeight;
+    messageList.scrollTo({
+      top: messageList.scrollHeight,
+      behavior
+    });
+    isNearBottomRef.current = true;
+    setIsNearBottom(true);
     setShowNewMessagesButton(false);
   }, []);
 
@@ -256,7 +263,7 @@ export default function ChatPage() {
         });
 
         if (isNearBottomRef.current) {
-          window.setTimeout(scrollToBottom, 0);
+          shouldScrollAfterRenderRef.current = true;
         } else {
           setShowNewMessagesButton(true);
         }
@@ -280,7 +287,6 @@ export default function ChatPage() {
   }, [
     isSocketReady,
     loadConversations,
-    scrollToBottom,
     updateSelectedGroup
   ]);
 
@@ -385,12 +391,13 @@ export default function ChatPage() {
       setIsLoadingMessages(true);
       setMessageError("");
       setShowNewMessagesButton(false);
+      isNearBottomRef.current = true;
       setIsNearBottom(true);
 
       try {
         const nextMessages = await getMessages(selectedConversationId);
+        conversationOpenScrollIdRef.current = selectedConversationId;
         setMessages(nextMessages);
-        window.setTimeout(scrollToBottom, 0);
       } catch {
         setMessageError("Failed to load messages.");
       } finally {
@@ -399,13 +406,44 @@ export default function ChatPage() {
     }
 
     loadSelectedMessages();
-  }, [scrollToBottom, selectedConversationId]);
+  }, [selectedConversationId]);
 
   useEffect(() => {
-    if (isNearBottom) {
-      window.setTimeout(scrollToBottom, 0);
+    if (conversationOpenScrollIdRef.current !== selectedConversationId) {
+      return;
     }
-  }, [isNearBottom, messages, scrollToBottom]);
+
+    let secondFrameId: number | undefined;
+    const firstFrameId = requestAnimationFrame(() => {
+      secondFrameId = requestAnimationFrame(() => {
+        if (conversationOpenScrollIdRef.current !== selectedConversationId) {
+          return;
+        }
+
+        scrollToBottom("auto");
+        conversationOpenScrollIdRef.current = null;
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(firstFrameId);
+
+      if (secondFrameId !== undefined) {
+        cancelAnimationFrame(secondFrameId);
+      }
+    };
+  }, [messages, scrollToBottom, selectedConversationId]);
+
+  useEffect(() => {
+    if (!shouldScrollAfterRenderRef.current) {
+      return;
+    }
+
+    shouldScrollAfterRenderRef.current = false;
+    requestAnimationFrame(() => {
+      scrollToBottom("auto");
+    });
+  }, [messages, scrollToBottom]);
 
   function handleLogout() {
     socketRef.current?.disconnect();
@@ -532,11 +570,19 @@ export default function ChatPage() {
       messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight;
     const nearBottom = distanceFromBottom < 100;
 
+    isNearBottomRef.current = nearBottom;
     setIsNearBottom(nearBottom);
 
     if (nearBottom) {
       setShowNewMessagesButton(false);
     }
+  }
+
+  function handleNewMessagesClick() {
+    scrollToBottom("smooth");
+    setShowNewMessagesButton(false);
+    isNearBottomRef.current = true;
+    setIsNearBottom(true);
   }
 
   function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
@@ -560,8 +606,8 @@ export default function ChatPage() {
     setIsSending(true);
     setSendError("");
 
-    if (isNearBottom) {
-      window.setTimeout(scrollToBottom, 0);
+    if (isNearBottomRef.current) {
+      shouldScrollAfterRenderRef.current = true;
     }
 
     socketRef.current.emit(
@@ -724,10 +770,10 @@ export default function ChatPage() {
     selectedIsGroup && selectedConversation.admins?.includes(user._id);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col border-x border-slate-200 bg-white md:flex-row">
+    <main className="h-dvh overflow-hidden bg-slate-50 text-slate-950">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col border-x border-slate-200 bg-white md:flex-row">
         <aside
-          className={`w-full border-b border-slate-200 p-5 md:block md:w-80 md:border-b-0 md:border-r ${
+          className={`min-h-0 w-full overflow-y-auto border-b border-slate-200 p-5 md:block md:w-80 md:border-b-0 md:border-r ${
             selectedConversation ? "hidden" : "block"
           }`}
         >
@@ -856,7 +902,7 @@ export default function ChatPage() {
         </aside>
 
         <section
-          className={`min-h-[100vh] flex-1 flex-col md:flex ${
+          className={`min-h-0 flex-1 flex-col md:flex ${
             selectedConversation ? "flex" : "hidden"
           }`}
         >
@@ -896,7 +942,7 @@ export default function ChatPage() {
               <div
                 ref={messageListRef}
                 onScroll={handleMessageScroll}
-                className="relative flex-1 overflow-y-auto px-5 py-4"
+                className="relative min-h-0 flex-1 overflow-y-auto px-5 py-4"
               >
                 {isLoadingMessages && messages.length === 0 ? (
                   <p className="text-center text-sm text-slate-600">
@@ -955,10 +1001,10 @@ export default function ChatPage() {
                 {showNewMessagesButton ? (
                   <button
                     type="button"
-                    onClick={scrollToBottom}
+                    onClick={handleNewMessagesClick}
                     className="sticky bottom-3 left-1/2 mt-4 -translate-x-1/2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow"
                   >
-                    New messages down
+                    New messages ↓
                   </button>
                 ) : null}
               </div>
