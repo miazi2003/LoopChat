@@ -39,7 +39,7 @@ const heroSignals = [
 
 export function HeroSection() {
   return (
-    <div className="relative bg-[#f8fbfa] pb-16">
+    <div className="relative bg-[#fbf8f4] pb-16">
       <section
         className="relative h-[760px] min-h-[680px] w-full max-w-[100vw] overflow-hidden sm:h-[720px] lg:h-[min(820px,90svh)] lg:min-h-[650px]"
         style={{ clipPath: "ellipse(110% 100% at 50% 0%)" }}
