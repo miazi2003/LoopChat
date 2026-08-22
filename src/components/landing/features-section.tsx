@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { motion, useReducedMotion } from "motion/react";
 import {
   ChevronDown,
   MessageSquareText,
@@ -34,14 +35,29 @@ const features = [
 ];
 
 export function FeaturesSection() {
+  const shouldReduceMotion = useReducedMotion();
   const [openId, setOpenId] = useState<string | null>(
     "realtime-delivery"
   );
 
   return (
-    <section id="features" className="bg-[#fbf8f4] px-5 py-20 sm:px-8 lg:py-28">
+    <section
+      id="features"
+      className="scroll-mt-24 bg-[#fbf8f4] px-5 py-20 sm:px-8 lg:py-28"
+    >
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div className="mx-auto w-full max-w-[520px] overflow-hidden rounded-lg">
+        <motion.div
+          initial={
+            shouldReduceMotion ? false : { opacity: 0, x: -20 }
+          }
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.6,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="mx-auto w-full max-w-[520px] overflow-hidden rounded-lg"
+        >
           <Image
             src="/images/loopchat-features-girl.png"
             alt="A LoopChat user smiling while messaging on her phone"
@@ -50,9 +66,21 @@ export function FeaturesSection() {
             sizes="(min-width: 1024px) 42vw, (min-width: 640px) 70vw, 100vw"
             className="h-auto w-full"
           />
-        </div>
+        </motion.div>
 
-        <div className="mx-auto w-full max-w-xl">
+        <motion.div
+          initial={
+            shouldReduceMotion ? false : { opacity: 0, x: 20 }
+          }
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.6,
+            delay: shouldReduceMotion ? 0 : 0.06,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="mx-auto w-full max-w-xl"
+        >
           <p className="text-sm font-semibold uppercase text-[#d96049]">
             Built for conversation
           </p>
@@ -64,14 +92,24 @@ export function FeaturesSection() {
           </p>
 
           <div className="mt-8 space-y-3">
-            {features.map((feature) => {
+            {features.map((feature, index) => {
               const isOpen = openId === feature.id;
               const Icon = feature.icon;
 
               return (
-                <div
+                <motion.div
                   key={feature.id}
-                  className="overflow-hidden rounded-lg border border-[#e7e3de] bg-white shadow-sm"
+                  initial={
+                    shouldReduceMotion ? false : { opacity: 0, y: 12 }
+                  }
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 0.4,
+                    delay: shouldReduceMotion ? 0 : index * 0.06,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="overflow-hidden rounded-lg border border-[#e7e3de] bg-white shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-[#ddd5cd] hover:shadow-md"
                 >
                   <button
                     type="button"
@@ -110,11 +148,11 @@ export function FeaturesSection() {
                       {feature.content}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
