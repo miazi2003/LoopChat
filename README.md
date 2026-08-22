@@ -9,8 +9,8 @@ It includes a marketing landing page, client-side authentication, direct and gro
 ## Live Demo
 
 ```text
-Landing Page: [(https://loop-chat-beta.vercel.app](https://loop-chat-beta.vercel.app)
-Chat Application: [https://loop-chat-beta.vercel.app](https://loop-chat-beta.vercel.app/chat)
+- Landing Page: [https://loop-chat-beta.vercel.app](https://loop-chat-beta.vercel.app)
+- Chat Application: [https://loop-chat-beta.vercel.app/chat](https://loop-chat-beta.vercel.app/chat)
 ```
 
 When hosted in one deployment, `/` is the landing page and `/login` starts the application flow.
