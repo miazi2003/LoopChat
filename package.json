@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "axios": "latest",
-    "lucide-react": "latest",
+    "lucide-react": "^1.33.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",

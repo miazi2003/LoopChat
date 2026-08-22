@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Socket } from "socket.io-client";
+import { ChatHeader } from "@/components/chat/chat-header";
+import { ChatSidebar } from "@/components/chat/chat-sidebar";
+import { MessageInput } from "@/components/chat/message-input";
+import { MessageList } from "@/components/chat/message-list";
+import { CreateGroupPanel } from "@/components/groups/create-group-panel";
+import { GroupInfoPanel } from "@/components/groups/group-info-panel";
 import { createSocket } from "@/lib/socket";
 import { getCurrentUser } from "@/services/auth";
 import {
@@ -20,65 +26,11 @@ import {
 import { getMessages } from "@/services/messages";
 import type { User } from "@/types/auth";
 import type { ChatUser, Conversation, Message } from "@/types/chat";
-
-type SocketMessage = {
-  id: string;
-  conversation: string;
-  sender: string;
-  text: string;
-  createdAt: number;
-};
-
-function formatMessageTime(value: string | number) {
-  return new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit"
-  }).format(new Date(value));
-}
-
-function normalizeSocketMessage(message: SocketMessage): Message {
-  return {
-    id: message.id,
-    conversation: message.conversation,
-    sender: message.sender,
-    text: message.text,
-    createdAt: message.createdAt
-  };
-}
-
-function isMatchingOptimisticMessage(message: Message, incomingMessage: Message) {
-  const messageTime = Number(message.createdAt);
-  const incomingTime = Number(incomingMessage.createdAt);
-
-  return (
-    message.id.startsWith("temp-") &&
-    message.conversation === incomingMessage.conversation &&
-    message.sender === incomingMessage.sender &&
-    message.text === incomingMessage.text &&
-    Math.abs(messageTime - incomingTime) < 10000
-  );
-}
-
-function getConversationName(conversation: Conversation) {
-  if (conversation.type === "group") {
-    return conversation.name || "Group conversation";
-  }
-
-  return conversation.participant?.name || "Direct conversation";
-}
-
-function getConversationSubtitle(conversation: Conversation) {
-  if (conversation.lastMessage?.text) {
-    return conversation.lastMessage.text;
-  }
-
-  if (conversation.type === "group") {
-    const count = conversation.participants?.length ?? 0;
-    return `${count} ${count === 1 ? "member" : "members"}`;
-  }
-
-  return conversation.participant?.phone || "";
-}
+import {
+  isMatchingOptimisticMessage,
+  normalizeSocketMessage,
+  type SocketMessage
+} from "@/utils/message";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -113,6 +65,7 @@ export default function ChatPage() {
   const [isGroupSearching, setIsGroupSearching] = useState(false);
   const [groupError, setGroupError] = useState("");
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
+  const [isAddMemberPanelOpen, setIsAddMemberPanelOpen] = useState(false);
   const [renameText, setRenameText] = useState("");
   const [addMemberSearchText, setAddMemberSearchText] = useState("");
   const [addMemberResults, setAddMemberResults] = useState<ChatUser[]>([]);
@@ -284,11 +237,7 @@ export default function ChatPage() {
       socket.off("message:new", handleNewMessage);
       socket.off("conversation:updated", handleConversationUpdated);
     };
-  }, [
-    isSocketReady,
-    loadConversations,
-    updateSelectedGroup
-  ]);
+  }, [isSocketReady, loadConversations, updateSelectedGroup]);
 
   useEffect(() => {
     const trimmedSearch = searchText.trim();
@@ -327,7 +276,8 @@ export default function ChatPage() {
         const selectedIds = selectedGroupMembers.map((member) => member._id);
         setGroupSearchResults(
           users.filter(
-            (result) => result._id !== user._id && !selectedIds.includes(result._id)
+            (result) =>
+              result._id !== user._id && !selectedIds.includes(result._id)
           )
         );
       } catch {
@@ -351,8 +301,9 @@ export default function ChatPage() {
       try {
         const users = await searchUsers(trimmedSearch);
         const existingIds =
-          selectedConversation.participants?.map((participant) => participant._id) ??
-          [];
+          selectedConversation.participants?.map(
+            (participant) => participant._id
+          ) ?? [];
         const selectedIds = selectedAddMembers.map((member) => member._id);
         setAddMemberResults(
           users.filter(
@@ -471,6 +422,7 @@ export default function ChatPage() {
   function handleSelectConversation(conversation: Conversation) {
     setSelectedConversation(conversation);
     setIsGroupInfoOpen(false);
+    setIsAddMemberPanelOpen(false);
     setGroupActionError("");
     setSelectedAddMembers([]);
     setAddMemberSearchText("");
@@ -480,10 +432,29 @@ export default function ChatPage() {
   function handleOpenGroupInfo() {
     setRenameText(selectedConversation?.name ?? "");
     setGroupActionError("");
+    setIsAddMemberPanelOpen(false);
     setSelectedAddMembers([]);
     setAddMemberSearchText("");
     setAddMemberResults([]);
     setIsGroupInfoOpen(true);
+  }
+
+  function handleCloseGroupInfo() {
+    setIsGroupInfoOpen(false);
+    setIsAddMemberPanelOpen(false);
+    setSelectedAddMembers([]);
+    setAddMemberSearchText("");
+    setAddMemberResults([]);
+    setIsAddMemberSearching(false);
+  }
+
+  function handleCloseAddMemberPanel() {
+    setIsAddMemberPanelOpen(false);
+    setSelectedAddMembers([]);
+    setAddMemberSearchText("");
+    setAddMemberResults([]);
+    setIsAddMemberSearching(false);
+    setGroupActionError("");
   }
 
   function handleGroupSearchChange(value: string) {
@@ -621,7 +592,9 @@ export default function ChatPage() {
 
         if (acknowledgement?.ok === false) {
           setMessages((currentMessages) =>
-            currentMessages.filter((message) => message.id !== optimisticMessage.id)
+            currentMessages.filter(
+              (message) => message.id !== optimisticMessage.id
+            )
           );
           setSendError("Failed to send message.");
           return;
@@ -633,7 +606,9 @@ export default function ChatPage() {
     );
   }
 
-  function handleMessageKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function handleMessageKeyDown(
+    event: React.KeyboardEvent<HTMLTextAreaElement>
+  ) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
@@ -656,7 +631,10 @@ export default function ChatPage() {
     setGroupActionError("");
 
     try {
-      const updatedGroup = await renameGroup(selectedConversation._id, trimmedName);
+      const updatedGroup = await renameGroup(
+        selectedConversation._id,
+        trimmedName
+      );
       setSelectedConversation(updatedGroup);
       setRenameText(updatedGroup.name ?? "");
       await loadConversations(updatedGroup);
@@ -684,7 +662,8 @@ export default function ChatPage() {
       setSelectedAddMembers([]);
       setAddMemberSearchText("");
       setAddMemberResults([]);
-      await loadConversations(updatedGroup);
+      setIsAddMemberPanelOpen(false);
+      await loadConversations(updatedGroup, false);
     } catch {
       setGroupActionError("Failed to add members.");
     } finally {
@@ -723,7 +702,10 @@ export default function ChatPage() {
     setGroupActionError("");
 
     try {
-      const updatedGroup = await promoteAdmin(selectedConversation._id, member._id);
+      const updatedGroup = await promoteAdmin(
+        selectedConversation._id,
+        member._id
+      );
       setSelectedConversation(updatedGroup);
       await loadConversations(updatedGroup);
     } catch {
@@ -765,141 +747,30 @@ export default function ChatPage() {
     return null;
   }
 
-  const selectedIsGroup = selectedConversation?.type === "group";
   const selectedIsAdmin =
-    selectedIsGroup && selectedConversation.admins?.includes(user._id);
+    selectedConversation?.type === "group" &&
+    selectedConversation.admins?.includes(user._id);
 
   return (
-    <main className="h-dvh overflow-hidden bg-slate-50 text-slate-950">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col border-x border-slate-200 bg-white md:flex-row">
-        <aside
-          className={`min-h-0 w-full overflow-y-auto border-b border-slate-200 p-5 md:block md:w-80 md:border-b-0 md:border-r ${
-            selectedConversation ? "hidden" : "block"
-          }`}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-normal">LoopChat</h1>
-              <p className="mt-1 text-sm text-slate-600">{user.name}</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-slate-100"
-            >
-              Logout
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsCreatingGroup(true)}
-            className="mt-5 w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            New Group
-          </button>
-
-          <div className="mt-6">
-            <label htmlFor="user-search" className="mb-2 block text-sm font-medium">
-              Search users
-            </label>
-            <input
-              id="user-search"
-              type="search"
-              value={searchText}
-              onChange={(event) => handleSearchChange(event.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              placeholder="Search by name or phone"
-            />
-          </div>
-
-          {searchText.trim() ? (
-            <div className="mt-3 rounded-md border border-slate-200">
-              {isSearching ? (
-                <p className="px-3 py-3 text-sm text-slate-600">Searching users...</p>
-              ) : null}
-
-              {!isSearching && searchMessage ? (
-                <p className="px-3 py-3 text-sm text-slate-600">{searchMessage}</p>
-              ) : null}
-
-              {!isSearching && searchResults.length > 0 ? (
-                <div className="divide-y divide-slate-200">
-                  {searchResults.map((result) => (
-                    <button
-                      key={result._id}
-                      type="button"
-                      onClick={() => handleStartConversation(result)}
-                      disabled={isStartingConversation}
-                      className="w-full px-3 py-3 text-left transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span className="block text-sm font-medium">{result.name}</span>
-                      <span className="mt-0.5 block text-xs text-slate-600">
-                        {result.phone}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="mt-6">
-            <h2 className="text-sm font-semibold">Conversations</h2>
-
-            <div className="mt-3">
-              {isLoadingConversations && conversations.length === 0 ? (
-                <p className="text-sm text-slate-600">Loading conversations...</p>
-              ) : null}
-
-              {conversationError && conversations.length === 0 ? (
-                <p className="text-sm text-red-600">{conversationError}</p>
-              ) : null}
-
-              {!isLoadingConversations &&
-              conversations.length === 0 &&
-              !conversationError ? (
-                <p className="text-sm text-slate-600">
-                  No conversations yet.
-                  <br />
-                  Search for someone to start chatting.
-                </p>
-              ) : null}
-
-              {conversations.length > 0 ? (
-                <div className="divide-y divide-slate-200 rounded-md border border-slate-200">
-                  {conversations.map((conversation) => {
-                    const isSelected =
-                      selectedConversation?._id === conversation._id;
-
-                    return (
-                      <button
-                        key={conversation._id}
-                        type="button"
-                        onClick={() => handleSelectConversation(conversation)}
-                        className={`w-full px-3 py-3 text-left transition ${
-                          isSelected ? "bg-slate-100" : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2 text-sm font-medium">
-                          {conversation.type === "group" ? (
-                            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] uppercase text-slate-700">
-                              Group
-                            </span>
-                          ) : null}
-                          {getConversationName(conversation)}
-                        </span>
-                        <span className="mt-0.5 block truncate text-xs text-slate-600">
-                          {getConversationSubtitle(conversation)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </aside>
+    <main className="h-dvh overflow-hidden bg-white text-[#18201b]">
+      <div className="flex h-full min-h-0 w-full flex-col bg-white md:flex-row">
+        <ChatSidebar
+          user={user}
+          conversations={conversations}
+          selectedConversation={selectedConversation}
+          isLoadingConversations={isLoadingConversations}
+          conversationError={conversationError}
+          searchText={searchText}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          searchMessage={searchMessage}
+          isStartingConversation={isStartingConversation}
+          onLogout={handleLogout}
+          onOpenCreateGroup={() => setIsCreatingGroup(true)}
+          onSearchChange={handleSearchChange}
+          onStartConversation={handleStartConversation}
+          onSelectConversation={handleSelectConversation}
+        />
 
         <section
           className={`min-h-0 flex-1 flex-col md:flex ${
@@ -908,137 +779,34 @@ export default function ChatPage() {
         >
           {selectedConversation ? (
             <>
-              <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedConversation(null)}
-                    className="mt-0.5 rounded-md border border-slate-300 px-2 py-1 text-sm font-medium transition hover:bg-slate-100 md:hidden"
-                  >
-                    Back
-                  </button>
-                  <div className="min-w-0">
-                  <h2 className="text-lg font-semibold tracking-normal">
-                    {getConversationName(selectedConversation)}
-                  </h2>
-                  <p className="mt-0.5 text-sm text-slate-600">
-                    {selectedConversation.type === "group"
-                      ? `${selectedConversation.participants?.length ?? 0} members`
-                      : selectedConversation.participant?.phone}
-                  </p>
-                  </div>
-                </div>
-                {selectedConversation.type === "group" ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenGroupInfo}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-slate-100"
-                  >
-                    Group info
-                  </button>
-                ) : null}
-              </header>
-
-              <div
-                ref={messageListRef}
+              <ChatHeader
+                conversation={selectedConversation}
+                onBack={() => setSelectedConversation(null)}
+                onOpenGroupInfo={handleOpenGroupInfo}
+              />
+              <MessageList
+                messageListRef={messageListRef}
+                conversation={selectedConversation}
+                messages={messages}
+                currentUserId={user._id}
+                isLoading={isLoadingMessages}
+                error={messageError}
+                showNewMessagesButton={showNewMessagesButton}
                 onScroll={handleMessageScroll}
-                className="relative min-h-0 flex-1 overflow-y-auto px-5 py-4"
-              >
-                {isLoadingMessages && messages.length === 0 ? (
-                  <p className="text-center text-sm text-slate-600">
-                    Loading messages...
-                  </p>
-                ) : null}
-
-                {messageError && messages.length === 0 ? (
-                  <p className="text-center text-sm text-red-600">{messageError}</p>
-                ) : null}
-
-                {!isLoadingMessages && !messageError && messages.length === 0 ? (
-                  <p className="text-center text-sm text-slate-600">
-                    No messages yet.
-                    <br />
-                    Send the first message.
-                  </p>
-                ) : null}
-
-                {messages.length > 0 ? (
-                  <div className="space-y-3">
-                    {messages.map((message) => {
-                      const isOwnMessage = message.sender === user._id;
-
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            isOwnMessage ? "justify-end" : "justify-start"
-                          }`}
-                        >
-                          <div
-                            className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                              isOwnMessage
-                                ? "bg-slate-900 text-white"
-                                : "bg-slate-100 text-slate-950"
-                            }`}
-                          >
-                            <p className="whitespace-pre-wrap break-words">
-                              {message.text || " "}
-                            </p>
-                            <p
-                              className={`mt-1 text-right text-[11px] ${
-                                isOwnMessage ? "text-slate-300" : "text-slate-500"
-                              }`}
-                            >
-                              {formatMessageTime(message.createdAt)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {showNewMessagesButton ? (
-                  <button
-                    type="button"
-                    onClick={handleNewMessagesClick}
-                    className="sticky bottom-3 left-1/2 mt-4 -translate-x-1/2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow"
-                  >
-                    New messages ↓
-                  </button>
-                ) : null}
-              </div>
-
-              <form
+                onNewMessagesClick={handleNewMessagesClick}
+              />
+              <MessageInput
+                value={newMessageText}
+                error={sendError}
+                isSending={isSending}
+                onChange={setNewMessageText}
                 onSubmit={handleSendMessage}
-                className="border-t border-slate-200 p-4"
-              >
-                {sendError ? (
-                  <p className="mb-2 text-sm text-red-600">{sendError}</p>
-                ) : null}
-                <div className="flex items-end gap-2">
-                  <textarea
-                    rows={1}
-                    value={newMessageText}
-                    onChange={(event) => setNewMessageText(event.target.value)}
-                    onKeyDown={handleMessageKeyDown}
-                    className="max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                    placeholder="Type a message..."
-                    aria-label="Message text"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newMessageText.trim() || isSending}
-                    className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isSending ? "Sending..." : "Send"}
-                  </button>
-                </div>
-              </form>
+                onKeyDown={handleMessageKeyDown}
+              />
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center p-6">
-              <p className="text-sm text-slate-600">
+            <div className="flex flex-1 items-center justify-center bg-white p-6">
+              <p className="rounded-lg bg-[#f5f7f4] px-5 py-3 text-sm text-[#7d887f]">
                 Select a conversation to start chatting.
               </p>
             </div>
@@ -1047,323 +815,67 @@ export default function ChatPage() {
       </div>
 
       {isCreatingGroup ? (
-        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-slate-950/30 px-4 py-4 sm:items-center">
-          <section className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">New Group</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Add at least two other members.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreatingGroup(false)}
-                aria-label="Close new group panel"
-                className="text-sm text-slate-600 hover:text-slate-950"
-              >
-                Close
-              </button>
-            </div>
-
-            <label htmlFor="group-name" className="mt-5 block text-sm font-medium">
-              Group name
-            </label>
-            <input
-              id="group-name"
-              value={groupName}
-              onChange={(event) => setGroupName(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              placeholder="Frontend Team"
-            />
-
-            <label htmlFor="group-search" className="mt-4 block text-sm font-medium">
-              Search users
-            </label>
-            <input
-              id="group-search"
-              type="search"
-              value={groupSearchText}
-              onChange={(event) => handleGroupSearchChange(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-              placeholder="Search by name or phone"
-            />
-
-            {isGroupSearching ? (
-              <p className="mt-2 text-sm text-slate-600">Searching users...</p>
-            ) : null}
-
-            {!isGroupSearching &&
-            groupSearchText.trim() &&
-            groupSearchResults.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-600">No users found.</p>
-            ) : null}
-
-            {groupSearchResults.length > 0 ? (
-              <div className="mt-2 max-h-32 divide-y divide-slate-200 overflow-y-auto rounded-md border border-slate-200">
-                {groupSearchResults.map((result) => (
-                  <button
-                    key={result._id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedGroupMembers((members) => [...members, result]);
-                      setGroupSearchResults((results) =>
-                        results.filter((userResult) => userResult._id !== result._id)
-                      );
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
-                  >
-                    {result.name}
-                    <span className="block text-xs text-slate-600">
-                      {result.phone}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            <div className="mt-4">
-              <h3 className="text-sm font-medium">Selected members</h3>
-              {selectedGroupMembers.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-600">No members selected.</p>
-              ) : (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedGroupMembers.map((member) => (
-                    <button
-                      key={member._id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedGroupMembers((members) =>
-                          members.filter((item) => item._id !== member._id)
-                        )
-                      }
-                      className="rounded-full bg-slate-100 px-3 py-1 text-xs hover:bg-slate-200"
-                    >
-                      {member.name} x
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {groupError ? (
-              <p className="mt-3 text-sm text-red-600">{groupError}</p>
-            ) : null}
-
-            {isGroupActionLoading ? (
-              <p className="mt-3 text-sm text-slate-600">Creating group...</p>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handleCreateGroup}
-              disabled={
-                isGroupActionLoading ||
-                !groupName.trim() ||
-                selectedGroupMembers.length < 2
-              }
-              className="mt-5 w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isGroupActionLoading ? "Creating..." : "Create Group"}
-            </button>
-          </section>
-        </div>
+        <CreateGroupPanel
+          name={groupName}
+          searchText={groupSearchText}
+          searchResults={groupSearchResults}
+          selectedMembers={selectedGroupMembers}
+          isSearching={isGroupSearching}
+          isLoading={isGroupActionLoading}
+          error={groupError}
+          onClose={() => setIsCreatingGroup(false)}
+          onNameChange={setGroupName}
+          onSearchChange={handleGroupSearchChange}
+          onSelectMember={(member) => {
+            setSelectedGroupMembers((members) => [...members, member]);
+            setGroupSearchResults((results) =>
+              results.filter((result) => result._id !== member._id)
+            );
+          }}
+          onRemoveMember={(member) =>
+            setSelectedGroupMembers((members) =>
+              members.filter((item) => item._id !== member._id)
+            )
+          }
+          onCreate={handleCreateGroup}
+        />
       ) : null}
 
       {isGroupInfoOpen && selectedConversation?.type === "group" ? (
-        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-slate-950/30 px-4 py-4 sm:items-center">
-          <section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-lg">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">
-                  {getConversationName(selectedConversation)}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  {selectedConversation.participants?.length ?? 0} members
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsGroupInfoOpen(false)}
-                aria-label="Close group info"
-                className="text-sm text-slate-600 hover:text-slate-950"
-              >
-                Close
-              </button>
-            </div>
-
-            {selectedIsAdmin ? (
-              <div className="mt-5 rounded-md border border-slate-200 p-3">
-                <label
-                  htmlFor="rename-group"
-                  className="block text-sm font-medium"
-                >
-                  Rename group
-                </label>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    id="rename-group"
-                    value={renameText}
-                    onChange={(event) => setRenameText(event.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRenameGroup}
-                    disabled={isGroupActionLoading || !renameText.trim()}
-                    className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-5">
-              <h3 className="text-sm font-semibold">Members</h3>
-              <div className="mt-2 divide-y divide-slate-200 rounded-md border border-slate-200">
-                {selectedConversation.participants?.map((member) => {
-                  const memberIsAdmin =
-                    selectedConversation.admins?.includes(member._id) ?? false;
-                  const isCurrentUser = member._id === user._id;
-
-                  return (
-                    <div
-                      key={member._id}
-                      className="flex items-center justify-between gap-3 px-3 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {member.name} {isCurrentUser ? "(you)" : ""}
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          {member.phone}
-                          {memberIsAdmin ? " · admin" : ""}
-                        </p>
-                      </div>
-                      {selectedIsAdmin && !isCurrentUser ? (
-                        <div className="flex shrink-0 gap-2">
-                          {!memberIsAdmin ? (
-                            <button
-                              type="button"
-                              onClick={() => handlePromoteAdmin(member)}
-                              disabled={isGroupActionLoading}
-                              className="text-xs font-medium text-slate-700 hover:text-slate-950 disabled:opacity-60"
-                            >
-                              Make admin
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMember(member)}
-                            disabled={isGroupActionLoading}
-                            className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {selectedIsAdmin ? (
-              <div className="mt-5 rounded-md border border-slate-200 p-3">
-                <label
-                  htmlFor="add-member-search"
-                  className="block text-sm font-medium"
-                >
-                  Add member
-                </label>
-                <input
-                  id="add-member-search"
-                  type="search"
-                  value={addMemberSearchText}
-                  onChange={(event) =>
-                    handleAddMemberSearchChange(event.target.value)
-                  }
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                  placeholder="Search by name or phone"
-                />
-                {isAddMemberSearching ? (
-                  <p className="mt-2 text-sm text-slate-600">Searching users...</p>
-                ) : null}
-                {!isAddMemberSearching &&
-                addMemberSearchText.trim() &&
-                addMemberResults.length === 0 ? (
-                  <p className="mt-2 text-sm text-slate-600">No users found.</p>
-                ) : null}
-                {addMemberResults.length > 0 ? (
-                  <div className="mt-2 max-h-28 divide-y divide-slate-200 overflow-y-auto rounded-md border border-slate-200">
-                    {addMemberResults.map((result) => (
-                      <button
-                        key={result._id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedAddMembers((members) => [...members, result]);
-                          setAddMemberResults((results) =>
-                            results.filter((item) => item._id !== result._id)
-                          );
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
-                      >
-                        {result.name}
-                        <span className="block text-xs text-slate-600">
-                          {result.phone}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {selectedAddMembers.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedAddMembers.map((member) => (
-                      <button
-                        key={member._id}
-                        type="button"
-                        onClick={() =>
-                          setSelectedAddMembers((members) =>
-                            members.filter((item) => item._id !== member._id)
-                          )
-                        }
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs hover:bg-slate-200"
-                      >
-                        {member.name} x
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={handleAddMembers}
-                  disabled={isGroupActionLoading || selectedAddMembers.length === 0}
-                  className="mt-3 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Add selected
-                </button>
-              </div>
-            ) : null}
-
-            {groupActionError ? (
-              <p className="mt-3 text-sm text-red-600">{groupActionError}</p>
-            ) : null}
-
-            {isGroupActionLoading ? (
-              <p className="mt-3 text-sm text-slate-600">Updating group...</p>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handleLeaveGroup}
-              disabled={isGroupActionLoading}
-              className="mt-5 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Leave group
-            </button>
-          </section>
-        </div>
+        <GroupInfoPanel
+          conversation={selectedConversation}
+          currentUserId={user._id}
+          currentUserIsAdmin={Boolean(selectedIsAdmin)}
+          isAddMemberPanelOpen={isAddMemberPanelOpen}
+          renameText={renameText}
+          addMemberSearchText={addMemberSearchText}
+          addMemberResults={addMemberResults}
+          selectedAddMembers={selectedAddMembers}
+          isAddMemberSearching={isAddMemberSearching}
+          isLoading={isGroupActionLoading}
+          error={groupActionError}
+          onClose={handleCloseGroupInfo}
+          onOpenAddMemberPanel={() => setIsAddMemberPanelOpen(true)}
+          onCloseAddMemberPanel={handleCloseAddMemberPanel}
+          onRenameTextChange={setRenameText}
+          onRename={handleRenameGroup}
+          onPromote={handlePromoteAdmin}
+          onRemove={handleRemoveMember}
+          onAddMemberSearchChange={handleAddMemberSearchChange}
+          onSelectAddMember={(member) => {
+            setSelectedAddMembers((members) => [...members, member]);
+            setAddMemberResults((results) =>
+              results.filter((result) => result._id !== member._id)
+            );
+          }}
+          onRemoveSelectedAddMember={(member) =>
+            setSelectedAddMembers((members) =>
+              members.filter((item) => item._id !== member._id)
+            )
+          }
+          onAddMembers={handleAddMembers}
+          onLeave={handleLeaveGroup}
+        />
       ) : null}
     </main>
   );
