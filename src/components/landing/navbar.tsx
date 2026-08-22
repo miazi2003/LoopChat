@@ -30,6 +30,7 @@ export function Navbar() {
         }
       } catch {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
         if (isMounted) {
           setAuthStatus("unauthenticated");
@@ -102,9 +103,9 @@ export function Navbar() {
           </a>
         </div>
 
-        <div className="flex w-auto shrink-0 justify-end">
+        <div className="flex w-[112px] shrink-0 justify-end">
           {authStatus === "loading" ? (
-            <span aria-hidden="true" className="h-10 w-auto" />
+            <span aria-hidden="true" className="h-10 w-[112px]" />
           ) : (
             <Link
               href={authStatus === "authenticated" ? "/chat" : "/login"}

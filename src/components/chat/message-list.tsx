@@ -39,7 +39,10 @@ export function MessageList({
       ) : null}
 
       {error && messages.length === 0 ? (
-        <p className="mx-auto max-w-sm rounded-lg bg-red-50 px-4 py-3 text-center text-sm text-red-600">
+        <p
+          role="alert"
+          className="mx-auto max-w-sm rounded-lg bg-red-50 px-4 py-3 text-center text-sm text-red-600"
+        >
           {error}
         </p>
       ) : null}

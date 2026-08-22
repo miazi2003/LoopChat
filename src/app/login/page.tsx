@@ -29,6 +29,7 @@ export default function LoginPage() {
         router.replace("/chat");
       } catch {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setIsCheckingToken(false);
       }
     }
@@ -53,7 +54,6 @@ export default function LoginPage() {
     try {
       const data = await loginUser(trimmedName, trimmedPhone);
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
       router.push("/chat");
     } catch {
       setError("Login failed. Please check your details and try again.");
@@ -131,7 +131,10 @@ export default function LoginPage() {
             </div>
 
             {error ? (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              <p
+                role="alert"
+                className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+              >
                 {error}
               </p>
             ) : null}

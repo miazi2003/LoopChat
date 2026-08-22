@@ -4,6 +4,7 @@ import type { Conversation } from "@/types/chat";
 
 type ConversationListProps = {
   conversations: Conversation[];
+  unreadCounts: Record<string, number>;
   selectedConversation: Conversation | null;
   isLoading: boolean;
   error: string;
@@ -12,6 +13,7 @@ type ConversationListProps = {
 
 export function ConversationList({
   conversations,
+  unreadCounts,
   selectedConversation,
   isLoading,
   error,
@@ -34,7 +36,10 @@ export function ConversationList({
         ) : null}
 
         {error && conversations.length === 0 ? (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p
+            role="alert"
+            className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600"
+          >
             {error}
           </p>
         ) : null}
@@ -53,6 +58,7 @@ export function ConversationList({
               <ConversationItem
                 key={conversation._id}
                 conversation={conversation}
+                unreadCount={unreadCounts[conversation._id] ?? 0}
                 isSelected={selectedConversation?._id === conversation._id}
                 onSelect={onSelect}
               />

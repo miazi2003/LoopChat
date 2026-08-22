@@ -24,7 +24,9 @@ export function MessageInput({
       className="border-t border-[#e8ece7] bg-white px-4 py-3 sm:px-6 sm:py-4"
     >
       {error ? (
-        <p className="mb-2 text-sm text-red-600">{error}</p>
+        <p role="alert" className="mb-2 text-sm text-red-600">
+          {error}
+        </p>
       ) : null}
       <div className="flex min-h-14 items-end gap-2 rounded-2xl bg-[#f3f5f2] p-1.5 pl-4">
         <textarea

@@ -1,60 +1,50 @@
 # LoopChat
 
-LoopChat is a responsive real-time messaging application supporting direct and group conversations using REST APIs and Socket.io.
+LoopChat is a responsive real-time messaging frontend built for a take-home assignment. It combines a product landing page with phone-and-name authentication, direct and group conversations, REST-based history, and Socket.io delivery through a provided external API.
 
-It includes a marketing landing page, client-side authentication, direct and group chat flows, and real-time message updates.
+## Links
 
----
+- Landing page: [https://loop-chat-beta.vercel.app](https://loop-chat-beta.vercel.app)
+- Chat application: [https://loop-chat-beta.vercel.app/chat](https://loop-chat-beta.vercel.app/chat)
+- Repository: [https://github.com/miazi2003/LoopChat](https://github.com/miazi2003/LoopChat)
+- API documentation: [docs/API.md](docs/API.md)
 
-## Live Demo
-
-```text
-- Landing Page: [https://loop-chat-beta.vercel.app](https://loop-chat-beta.vercel.app)
-- Chat Application: [https://loop-chat-beta.vercel.app/chat](https://loop-chat-beta.vercel.app/chat)
-```
-
-When hosted in one deployment, `/` is the landing page and `/login` starts the application flow.
-
----
+The links above returned HTTP 200 during the final repository audit on August 22, 2026. Authenticated and two-user realtime flows still require normal browser QA when evaluating a deployment.
 
 ## Features
 
-- Phone + name login/register flow
-- JWT-based authentication
+- Phone and name login/register flow
+- Bearer JWT authentication for REST and Socket.io
 - User search by name or phone
 - Direct conversation creation
-- Conversation list
-- Message history
-- Real-time messaging using Socket.io
-- Optimistic message sending
-- Smart auto-scroll
-- Group conversation creation
-- Group messaging
-- Add/remove group members
-- Promote group admins
-- Rename groups
-- Leave groups
-- Real-time group updates
-- Loading, empty, and error states
-- Responsive desktop/mobile chat experience
-- Marketing landing page
-
----
+- Group creation and group messaging
+- Group rename, add member, remove member, promote admin, and leave actions
+- REST message history normalized into a shared message shape
+- Realtime `message:new` and `conversation:updated` handling
+- Optimistic message sending with Socket acknowledgement and reconciliation
+- Immediate sidebar preview/order updates
+- Session-only unread badges for inactive conversations
+- Smart auto-scroll with a new-message indicator when reading older messages
+- Branded initial, search, and action loading states
+- Empty and error states
+- Responsive landing, login, chat, and group dialogs
+- Reduced-motion-aware landing animations and smooth section navigation
 
 ## Tech Stack
 
-- Next.js
+- Next.js App Router
 - React
 - TypeScript
 - Tailwind CSS
 - Axios
 - Socket.io Client
 - Lucide React
-- Deployment: Vercel
+- shadcn/ui primitives backed by Base UI
+- Sonner
+- Motion (`motion/react`)
+- Vercel deployment
 
-The project intentionally avoids unnecessary state-management libraries. React state, effects, and refs are used to keep the implementation simple and easy to explain.
-
----
+The project intentionally avoids Redux, Zustand, TanStack Query, React Hook Form, and similar abstractions. The current scope is manageable with local React state, effects, refs, typed services, and focused reusable components.
 
 ## Getting Started
 
@@ -71,8 +61,6 @@ cd LoopChat
 npm install
 ```
 
-### Environment Variables
-
 Create `.env.local` in the project root:
 
 ```env
@@ -80,187 +68,205 @@ NEXT_PUBLIC_API_URL=https://frontend-task-chatapp.onrender.com/api
 NEXT_PUBLIC_SOCKET_URL=https://frontend-task-chatapp.onrender.com
 ```
 
-### Run Development Server
+These are public service URLs, not secrets. Never place JWTs or private credentials in `NEXT_PUBLIC_*` variables.
+
+Start development:
 
 ```bash
 npm run dev
 ```
 
-Local development runs at:
+Open [http://localhost:3000](http://localhost:3000).
 
-```text
-http://localhost:3000
-```
-
-### Production Build
+Production validation:
 
 ```bash
+npm run lint
+npx tsc --noEmit
 npm run build
 npm start
 ```
 
----
+## Routes
 
-## Application Routes
+| Route | Purpose |
+| --- | --- |
+| `/` | Product landing page |
+| `/login` | Login or automatic registration |
+| `/chat` | Client-protected messaging application |
 
-```text
-/       Landing page
-/login  Login/register
-/chat   Authenticated chat application
-```
-
----
-
-## API Documentation
-
-See [docs/API.md](docs/API.md).
-
-The API documentation was created after manually inspecting the provided live API responses and Socket.io events.
-
----
-
-# Part 3 - Thought Process
-
-## 1. Architecture and Technical Choices
-
-I used Next.js with TypeScript for the frontend. I kept the architecture intentionally simple because this was a time-limited frontend assignment.
-
-Axios is used for REST requests because a reusable Axios instance made Bearer-token handling straightforward. I used React `useState`, `useEffect`, and `useRef` instead of Redux, Zustand, or TanStack Query because the application state was manageable without another abstraction.
-
-Socket.io Client is used for real-time messaging because the provided backend exposes Socket.io events. REST is used for initial and persistent data such as authentication, conversations, message history, and group actions. Socket.io is used for real-time events such as new messages and conversation updates.
-
-The trade-off is that local state made the implementation faster to build and easier to understand, while a larger production application could benefit from a dedicated server-state or global-state solution.
-
-## 2. Message Architecture
-
-Message history is initially loaded through REST. The API returns history newest-first, so the frontend reverses a copied array and displays messages oldest-to-newest with the newest message at the bottom.
-
-Real-time `message:new` events are appended directly into local React state instead of refetching the full message history. Own sent messages use optimistic UI so the sender sees the message immediately. Temporary optimistic messages are reconciled with the server message to prevent duplicates.
-
-Conversation sidebar refreshes happen silently in the background. This avoids visible loading flashes and makes real-time messaging feel immediate.
-
-## 3. Smart Auto-Scroll
-
-Opening a conversation scrolls to the latest message. If the user is near the bottom, new messages automatically scroll into view.
-
-If the user has scrolled upward to read older messages, the application does not force them back down. A new-message control lets the user return to the latest messages. This was implemented because it was an explicit assignment requirement and improves chat usability.
-
-## 4. Group Conversations
-
-Direct and group messages reuse the same message system. Group-specific APIs are used only for group creation and member/admin management.
-
-Admin controls are displayed only when the current user ID exists in the group's `admins` array. The `conversation:updated` Socket.io event is used to update group information in real time.
-
-## 5. Landing Page Design
-
-The landing page uses a modern communication/SaaS visual direction. The design focuses on showing the product itself rather than using stock photography.
-
-The hero and product preview immediately communicate what LoopChat does. Feature sections focus on real implemented behavior: real-time messaging, direct chats, groups, and smart auto-scroll. The page is responsive and intentionally avoids generic sections such as fake testimonials, pricing, or fake customer logos.
-
-## 6. API Issues and Observations
-
-### Conversation response inconsistency
-
-`GET /conversations` returned an empty raw array when there were no conversations, while a populated response used a `{ data: [...] }` wrapper.
-
-The frontend service normalizes both forms into a plain conversation array.
-
-### Empty messages
-
-The backend accepted and stored an empty message during testing even though the assignment requires empty messages not to be sendable.
-
-The frontend blocks empty and whitespace-only messages before sending.
-
-### Message shape inconsistency
-
-REST message responses use:
+## Architecture
 
 ```text
-_id
-createdAt as ISO string
+UI routes and components
+        |
+        v
+typed service functions
+        |
+        +----> shared Axios instance ----> provided REST API
+        |
+        +----> Socket.io helper ---------> provided Socket server
 ```
 
-Socket.io `message:new` responses use:
+- `src/app` owns route composition and page-level state.
+- `src/components/chat` contains presentation and chat interaction surfaces.
+- `src/components/groups` contains group management dialogs and member actions.
+- `src/components/landing` contains the product landing page.
+- `src/components/shared` contains reusable loading and reveal primitives.
+- `src/services` contains REST calls; components do not call Axios directly.
+- `src/lib` contains the shared Axios instance and Socket factory.
+- `src/types` defines the internal user, conversation, and message contracts.
+- `src/utils` handles formatting, API error extraction, and message normalization/reconciliation.
+
+`src/app/chat/page.tsx` is the page-level state owner. This is deliberately explicit for a take-home-sized application: conversation, message, group-action, unread, and scroll state remain easy to trace in one place, while rendering is split into focused components. A larger product would likely extract domain hooks or introduce server-state caching.
+
+## Authentication Approach
+
+`POST /auth/login` accepts a name and phone number. The provided API logs in an existing phone or creates a new user for a unique phone. The returned JWT is stored under `localStorage.token`.
+
+The shared Axios request interceptor reads that token and adds:
+
+```http
+Authorization: Bearer <token>
+```
+
+The Socket helper sends the same JWT as:
+
+```ts
+auth: { token }
+```
+
+LocalStorage is an assignment trade-off, not a claim of stronger security. This is a frontend-only project using a provided bearer-token API, and there is no application backend available to issue an HttpOnly session cookie. In a production architecture, an HttpOnly cookie and backend-for-frontend could reduce JavaScript token exposure, depending on the API and CSRF model.
+
+## Message and Realtime Approach
+
+Message history is loaded through REST. The API returns messages newest-first with `_id` and ISO timestamps. `getMessages()` copies, reverses, and maps that data into the internal `Message` type.
+
+Socket `message:new` events use `id` and numeric timestamps. They are normalized before entering state. Active-conversation events append or reconcile directly without refetching message history. The sidebar preview is updated locally immediately, then the conversation list is silently refetched for server reconciliation.
+
+Sending follows this flow:
 
 ```text
-id
-createdAt as numeric timestamp
+trim input
+  -> append temporary message
+  -> clear composer and update sidebar locally
+  -> emit message:send with a 10-second acknowledgement timeout
+  -> reconcile message:new against the temporary message
+  -> remove/restore on failure
 ```
 
-The frontend normalizes both formats into a shared internal message structure.
+The optimistic matcher uses conversation, sender, text, and a short timestamp window because the provided Socket contract does not accept or return a client correlation ID. That is intentionally simple; a production protocol should echo a client-generated id for exact reconciliation.
 
-### Message ordering
+## Smart Auto-Scroll
 
-Message history was returned newest-first, so the frontend reverses a copied array for normal chronological chat display.
+The message list is the real internal scroll container (`flex-1 min-h-0 overflow-y-auto`). Opening a conversation sets a conversation-specific post-render trigger and scrolls after two animation frames so the rendered history is measured correctly.
 
-### Search observation
+For realtime messages, the code computes the distance from the bottom. When the user is within roughly 100 pixels, the next render scrolls down. When the user is reading older messages, their position is preserved and a `New messages` control appears instead.
 
-A partial phone search such as `016` returned an empty result during testing.
+## Initial Loading vs Background Refresh
 
-This documents only the observed behavior from that test and does not claim that partial phone search is universally unsupported.
+Visible loaders are reserved for initial auth, empty conversation/message loads, searches, and explicit group actions. Socket-driven conversation refreshes call the existing loader with `showLoading = false`, so current content remains visible. `message:new` never reloads active history.
 
-## 7. AI Usage
+## Group Permissions
 
-AI tools were used during development for planning implementation steps, generating initial boilerplate, helping structure components and services, reviewing implementation ideas, debugging real-time messaging and loading-state issues, and drafting documentation.
+Admin controls are shown only when the current user id appears in the group's `admins` array. This is a UX decision, not a security boundary. The provided backend remains responsible for authorizing rename, add, remove, and promotion requests; backend errors are shown through Sonner.
 
-Manual work included inspecting and testing the API with Postman, verifying request and response shapes, testing Socket.io with small Node scripts and multiple users, testing application flows in the browser, reviewing AI-generated code, and correcting behavior when implementation details were wrong.
+## Unread Count Limitation
 
-AI output was not accepted blindly; the implementation was tested and adjusted when behavior did not match the assignment requirements.
+The provided API does not expose `unreadCount`, `lastReadAt`, or read-receipt state. LoopChat therefore keeps unread counts in client session state only. Counts reset after a page refresh and are not presented as authoritative server data.
 
-## 8. Challenges and Fixes
+# Part 3: Thought Process
 
-The most meaningful implementation challenge was that real-time messages initially caused the message history and conversation list to visibly reload.
+## Technical Decisions and Trade-offs
 
-The final approach appends real-time messages directly to state, reloads message history only when the actual selected conversation changes, and refreshes sidebar conversations silently in the background. A ref is used where needed so Socket.io listeners can access the currently selected conversation without stale state.
+1. **Local React state instead of a global store:** The app has one main chat state owner and a small route surface. This keeps data flow explicit. A larger multi-route product could justify a store or server-state library.
+2. **REST plus Socket.io:** REST provides initial/persistent state; Socket.io provides low-latency events. Silent REST reconciliation protects against local sidebar drift.
+3. **Optimistic sending:** It improves perceived speed but requires temporary identity, failure recovery, and server-event reconciliation.
+4. **LocalStorage JWT:** It fits the provided frontend-only bearer API and Socket handshake, but an HttpOnly cookie/BFF would be preferable in many production systems.
+5. **Refs for listener-sensitive state:** The Socket listener reads selected conversation, current user, and near-bottom status from refs to avoid stale closures without reconnecting on every render.
+6. **Message normalization:** One internal type prevents REST `_id`/ISO timestamps and Socket `id`/numeric timestamps from leaking throughout UI components.
+7. **Frontend permission hiding:** It creates a clear group UI, while backend authorization remains the actual security enforcement.
+8. **Motion only on the landing page:** Small transform/opacity reveals improve presentation without introducing animation into the scroll-sensitive chat application.
 
-Optimistic messages were also added so the sender sees their own message immediately.
+## Landing Page Design
 
-## 9. What I Would Improve With More Time
+The landing page uses a green messaging identity, people-focused visual assets, and an actual LoopChat product screenshot. The hero communicates direct chat, groups, and realtime delivery in the first viewport. The feature accordion, experience band, and final CTA avoid unsupported pricing, testimonials, or platform claims.
 
-- Older-message pagination or infinite history loading using the API's `hasMore`
-- Stronger automated testing
-- More robust optimistic-message delivery states such as sent, failed, and retry
-- Accessibility testing
-- Additional UI polish
-- Improved error recovery
-- Potentially using a server-state library if the application grew significantly
+Animations are deliberately short, run once, and use transform/opacity. Section navigation uses real anchor links plus reduced-motion-aware smooth scrolling. The layout collapses naturally for mobile, while large product imagery is served through `next/image`.
 
----
-## Testing
+## API Issues Observed
 
-Verified manually during development and after deployment:
+- Empty and populated `GET /conversations` responses used different wrapper shapes. The conversation service normalizes both to an array.
+- Direct-conversation creation and list responses represent participants differently.
+- Message history was observed newest-first; the service reverses a copy.
+- REST messages use `_id` and ISO dates; Socket messages use `id` and numeric timestamps.
+- The backend accepted an empty REST message; the UI blocks empty and whitespace-only text.
+- A partial phone query such as `016` returned no result in one observed test.
+- An invalid REST message conversation returned `null`; its status was not recorded.
 
-- `npm run lint` passes
-- `npm run build` passes
-- Landing page renders correctly
-- Login and logout flow works
-- Direct conversation flow works
-- Real-time direct messaging works without page refresh
-- Own messages appear immediately using optimistic UI
-- Conversation updates refresh silently in the background
-- Group creation works
-- Group messaging works in real time
-- Group management actions work
-- Smart auto-scroll works as expected
-- Mobile/responsive chat layout works
-- Production deployment was tested successfully
+See [docs/API.md](docs/API.md) for verified payloads, responses, and Socket events.
 
-No automated end-to-end test suite is included.
+## AI Usage
 
----
+AI tools were used for planning, boilerplate assistance, UI direction exploration, debugging realtime/loading/scroll issues, architecture review, and documentation drafting. Outputs were reviewed against the real repository and observed API behavior. Suggestions were adapted, corrected, or rejected when they did not match the assignment or existing code.
+
+Manual work included API inspection, response-shape verification, browser flow checks during development, component integration, and reviewing generated changes. The final repository still requires the evaluator's normal authenticated two-user QA; AI-assisted review is not a substitute for runtime verification.
+
+## Challenges and Lessons
+
+- Realtime events originally triggered visible history loading; direct state append plus silent sidebar refresh removed the flash.
+- A stale selected-conversation closure stopped active realtime delivery; a ref lets the single listener read the current id.
+- The message panel originally grew with content; viewport height, `min-h-0`, and one internal scroll container restored smart scrolling.
+- Conversation-open scrolling ran too early; a conversation-specific trigger and two animation frames wait for rendered history.
+- Sidebar previews lagged; local preview/reorder now happens before silent REST reconciliation.
+- Optimistic echoes could duplicate messages; temporary messages are matched and replaced by server events.
+- Rapid conversation switching could apply stale history; effect cleanup guards now ignore obsolete responses.
+
+## Future Improvements
+
+- Automated unit, integration, and two-browser end-to-end tests
+- Older-message pagination using the API's `hasMore` field once request parameters are verified
+- HttpOnly cookie/BFF authentication where architecture permits
+- Explicit Socket connection/reconnection status and retry UX
+- Server-backed unread/read state if the API adds it
+- Client correlation ids and richer sent/failed/retry message states
+- Accessibility testing with screen readers and automated tooling
+- Error monitoring and performance telemetry
+- Domain hooks or server-state caching if the product grows beyond one chat route
+
+## Validation
+
+The final audit runs:
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+There is no automated test suite. See `AUDIT_REPORT.md` for the exact validation results and the two-user manual QA checklist, and `INTERVIEW_PREP.md` for project-specific interview explanations.
 
 ## Project Structure
 
 ```text
 src/
-├── app/
-│   ├── chat/
-│   ├── login/
-│   └── page.tsx
-├── lib/
-├── services/
-└── types/
+|-- app/
+|   |-- chat/page.tsx
+|   |-- login/page.tsx
+|   |-- globals.css
+|   |-- layout.tsx
+|   `-- page.tsx
+|-- components/
+|   |-- chat/
+|   |-- groups/
+|   |-- landing/
+|   |-- shared/
+|   `-- ui/
+|-- lib/
+|-- services/
+|-- types/
+`-- utils/
 
 docs/
-└── API.md
+`-- API.md
 ```

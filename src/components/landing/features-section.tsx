@@ -140,6 +140,7 @@ export function FeaturesSection() {
 
                   <div
                     id={`${feature.id}-content`}
+                    aria-hidden={!isOpen}
                     className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
                       isOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                     }`}

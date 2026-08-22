@@ -8,6 +8,7 @@ import type { ChatUser, Conversation } from "@/types/chat";
 type ChatSidebarProps = {
   user: User;
   conversations: Conversation[];
+  unreadCounts: Record<string, number>;
   selectedConversation: Conversation | null;
   isLoadingConversations: boolean;
   conversationError: string;
@@ -26,6 +27,7 @@ type ChatSidebarProps = {
 export function ChatSidebar({
   user,
   conversations,
+  unreadCounts,
   selectedConversation,
   isLoadingConversations,
   conversationError,
@@ -91,6 +93,7 @@ export function ChatSidebar({
 
       <ConversationList
         conversations={conversations}
+        unreadCounts={unreadCounts}
         selectedConversation={selectedConversation}
         isLoading={isLoadingConversations}
         error={conversationError}

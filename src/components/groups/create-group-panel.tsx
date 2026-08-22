@@ -1,6 +1,13 @@
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
 import { LoopChatLoader } from "@/components/shared/loopchat-loader";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import type { ChatUser } from "@/types/chat";
 
 type CreateGroupPanelProps = {
@@ -35,25 +42,19 @@ export function CreateGroupPanel({
   onCreate
 }: CreateGroupPanelProps) {
   return (
-    <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-[#152018]/35 px-4 py-4 backdrop-blur-[2px] sm:items-center">
-      <section className="w-full max-w-md rounded-lg border border-[#e1e7e0] bg-white p-5 shadow-2xl shadow-black/10 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-[#19221b]">New group</h2>
-            <p className="mt-1 text-sm text-[#7d887f]">
-              Add at least two other members.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close new group panel"
-            title="Close"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#7d887f] transition hover:bg-[#f3f5f2] hover:text-[#263029]"
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && !isLoading && onClose()}>
+      <DialogContent
+        showCloseButton={!isLoading}
+        className="max-h-[90vh] max-w-md overflow-y-auto rounded-lg p-5 shadow-2xl shadow-black/10 sm:p-6"
+      >
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-[#19221b]">
+            New group
+          </DialogTitle>
+          <DialogDescription>
+            Add at least two other members.
+          </DialogDescription>
+        </DialogHeader>
 
         <label htmlFor="group-name" className="mt-6 block text-sm font-semibold text-[#39443c]">
           Group name
@@ -87,7 +88,10 @@ export function CreateGroupPanel({
           </div>
         ) : null}
 
-        {!isSearching && searchText.trim() && searchResults.length === 0 ? (
+        {!isSearching &&
+        !error &&
+        searchText.trim() &&
+        searchResults.length === 0 ? (
           <p className="mt-2 text-sm text-[#7d887f]">No users found.</p>
         ) : null}
 
@@ -148,7 +152,7 @@ export function CreateGroupPanel({
             "Create Group"
           )}
         </button>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

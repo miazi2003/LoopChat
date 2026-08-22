@@ -31,6 +31,7 @@ import type { ChatUser, Conversation, Message } from "@/types/chat";
 import { getApiErrorMessage } from "@/utils/error";
 import {
   isMatchingOptimisticMessage,
+  mergeMessageHistory,
   normalizeSocketMessage,
   type SocketMessage
 } from "@/utils/message";
@@ -44,6 +45,7 @@ export default function ChatPage() {
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [conversationError, setConversationError] = useState("");
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
@@ -81,12 +83,27 @@ export default function ChatPage() {
   const [promotingMemberId, setPromotingMemberId] = useState<string | null>(null);
   const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const currentUserIdRef = useRef<string | null>(null);
+  const processedRealtimeMessageIdsRef = useRef<Set<string>>(new Set());
   const selectedConversationIdRef = useRef<string | null>(null);
   const isNearBottomRef = useRef(true);
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollAfterRenderRef = useRef(false);
   const conversationOpenScrollIdRef = useRef<string | null>(null);
   const selectedConversationId = selectedConversation?._id;
+
+  const clearUnreadCount = useCallback((conversationId: string) => {
+    setUnreadCounts((currentCounts) => {
+      if (!currentCounts[conversationId]) {
+        return currentCounts;
+      }
+
+      return {
+        ...currentCounts,
+        [conversationId]: 0
+      };
+    });
+  }, []);
 
   const loadConversations = useCallback(
     async (
@@ -113,6 +130,8 @@ export default function ChatPage() {
           });
 
           if (matchingConversation) {
+            selectedConversationIdRef.current = matchingConversation._id;
+            clearUnreadCount(matchingConversation._id);
             setSelectedConversation(matchingConversation);
           }
         }
@@ -124,7 +143,7 @@ export default function ChatPage() {
         }
       }
     },
-    []
+    [clearUnreadCount]
   );
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
@@ -212,6 +231,7 @@ export default function ChatPage() {
 
       try {
         const currentUser = await getCurrentUser();
+        currentUserIdRef.current = currentUser._id;
         setUser(currentUser);
         await loadConversations();
         socketRef.current = createSocket(token);
@@ -243,8 +263,27 @@ export default function ChatPage() {
     function handleNewMessage(incomingMessage: SocketMessage) {
       const normalizedMessage = normalizeSocketMessage(incomingMessage);
       const activeConversationId = selectedConversationIdRef.current;
+      const isNewRealtimeEvent = !processedRealtimeMessageIdsRef.current.has(
+        normalizedMessage.id
+      );
+
+      if (isNewRealtimeEvent) {
+        processedRealtimeMessageIdsRef.current.add(normalizedMessage.id);
+      }
 
       updateConversationPreview(normalizedMessage);
+
+      if (
+        isNewRealtimeEvent &&
+        normalizedMessage.sender !== currentUserIdRef.current &&
+        normalizedMessage.conversation !== activeConversationId
+      ) {
+        setUnreadCounts((currentCounts) => ({
+          ...currentCounts,
+          [normalizedMessage.conversation]:
+            (currentCounts[normalizedMessage.conversation] ?? 0) + 1
+        }));
+      }
 
       if (activeConversationId === normalizedMessage.conversation) {
         setMessages((currentMessages) => {
@@ -307,21 +346,34 @@ export default function ChatPage() {
       return;
     }
 
+    let ignoreResult = false;
     const timeoutId = window.setTimeout(async () => {
       try {
         const users = await searchUsers(trimmedSearch);
+
+        if (ignoreResult) {
+          return;
+        }
+
         const otherUsers = users.filter((result) => result._id !== user._id);
         setSearchResults(otherUsers);
         setSearchMessage(otherUsers.length === 0 ? "No users found." : "");
       } catch {
-        setSearchResults([]);
-        setSearchMessage("Failed to search users.");
+        if (!ignoreResult) {
+          setSearchResults([]);
+          setSearchMessage("Failed to search users.");
+        }
       } finally {
-        setIsSearching(false);
+        if (!ignoreResult) {
+          setIsSearching(false);
+        }
       }
     }, 350);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      ignoreResult = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [searchText, user]);
 
   useEffect(() => {
@@ -331,9 +383,15 @@ export default function ChatPage() {
       return;
     }
 
+    let ignoreResult = false;
     const timeoutId = window.setTimeout(async () => {
       try {
         const users = await searchUsers(trimmedSearch);
+
+        if (ignoreResult) {
+          return;
+        }
+
         const selectedIds = selectedGroupMembers.map((member) => member._id);
         setGroupSearchResults(
           users.filter(
@@ -342,13 +400,20 @@ export default function ChatPage() {
           )
         );
       } catch {
-        setGroupError("Failed to search users.");
+        if (!ignoreResult) {
+          setGroupError("Failed to search users.");
+        }
       } finally {
-        setIsGroupSearching(false);
+        if (!ignoreResult) {
+          setIsGroupSearching(false);
+        }
       }
     }, 350);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      ignoreResult = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [groupSearchText, selectedGroupMembers, user]);
 
   useEffect(() => {
@@ -358,9 +423,15 @@ export default function ChatPage() {
       return;
     }
 
+    let ignoreResult = false;
     const timeoutId = window.setTimeout(async () => {
       try {
         const users = await searchUsers(trimmedSearch);
+
+        if (ignoreResult) {
+          return;
+        }
+
         const existingIds =
           selectedConversation.participants?.map(
             (participant) => participant._id
@@ -375,13 +446,20 @@ export default function ChatPage() {
           )
         );
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "Failed to search users."));
+        if (!ignoreResult) {
+          toast.error(getApiErrorMessage(error, "Failed to search users."));
+        }
       } finally {
-        setIsAddMemberSearching(false);
+        if (!ignoreResult) {
+          setIsAddMemberSearching(false);
+        }
       }
     }, 350);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      ignoreResult = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [addMemberSearchText, selectedAddMembers, selectedConversation, user]);
 
   useEffect(() => {
@@ -393,9 +471,12 @@ export default function ChatPage() {
   }, [isNearBottom]);
 
   useEffect(() => {
+    let ignoreResult = false;
+
     async function loadSelectedMessages() {
       if (!selectedConversationId) {
         setMessages([]);
+        setIsLoadingMessages(false);
         return;
       }
 
@@ -408,16 +489,36 @@ export default function ChatPage() {
 
       try {
         const nextMessages = await getMessages(selectedConversationId);
+
+        if (ignoreResult) {
+          return;
+        }
+
         conversationOpenScrollIdRef.current = selectedConversationId;
-        setMessages(nextMessages);
+        setMessages((currentMessages) =>
+          mergeMessageHistory(
+            nextMessages,
+            currentMessages.filter(
+              (message) => message.conversation === selectedConversationId
+            )
+          )
+        );
       } catch {
-        setMessageError("Failed to load messages.");
+        if (!ignoreResult) {
+          setMessageError("Failed to load messages.");
+        }
       } finally {
-        setIsLoadingMessages(false);
+        if (!ignoreResult) {
+          setIsLoadingMessages(false);
+        }
       }
     }
 
-    loadSelectedMessages();
+    void loadSelectedMessages();
+
+    return () => {
+      ignoreResult = true;
+    };
   }, [selectedConversationId]);
 
   useEffect(() => {
@@ -460,6 +561,7 @@ export default function ChatPage() {
   function handleLogout() {
     socketRef.current?.disconnect();
     socketRef.current = null;
+    currentUserIdRef.current = null;
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/login");
@@ -481,6 +583,8 @@ export default function ChatPage() {
   }
 
   function handleSelectConversation(conversation: Conversation) {
+    selectedConversationIdRef.current = conversation._id;
+    clearUnreadCount(conversation._id);
     setSelectedConversation(conversation);
     setIsGroupInfoOpen(false);
     setIsAddMemberPanelOpen(false);
@@ -632,6 +736,7 @@ export default function ChatPage() {
 
     setMessages((currentMessages) => [...currentMessages, optimisticMessage]);
     updateConversationPreview(optimisticMessage);
+    setNewMessageText("");
     setIsSending(true);
     setSendError("");
 
@@ -639,27 +744,27 @@ export default function ChatPage() {
       shouldScrollAfterRenderRef.current = true;
     }
 
-    socketRef.current.emit(
+    socketRef.current.timeout(10000).emit(
       "message:send",
       {
         conversationId: selectedConversation._id,
         text: trimmedText
       },
-      (acknowledgement?: { ok?: boolean }) => {
+      (error: Error | null, acknowledgement?: { ok?: boolean }) => {
         setIsSending(false);
 
-        if (acknowledgement?.ok === false) {
+        if (error || acknowledgement?.ok === false) {
           setMessages((currentMessages) =>
             currentMessages.filter(
               (message) => message.id !== optimisticMessage.id
             )
           );
+          setNewMessageText((currentText) => currentText || trimmedText);
           setSendError("Failed to send message.");
           void loadConversations(undefined, false);
           return;
         }
 
-        setNewMessageText("");
         void loadConversations(undefined, false).then(() => {
           updateConversationPreview(optimisticMessage);
         });
@@ -798,6 +903,7 @@ export default function ChatPage() {
 
     try {
       await removeParticipant(selectedConversation._id, user._id);
+      selectedConversationIdRef.current = null;
       setSelectedConversation(null);
       setIsGroupInfoOpen(false);
       await loadConversations(undefined, false);
@@ -835,6 +941,7 @@ export default function ChatPage() {
         <ChatSidebar
           user={user}
           conversations={conversations}
+          unreadCounts={unreadCounts}
           selectedConversation={selectedConversation}
           isLoadingConversations={isLoadingConversations}
           conversationError={conversationError}
@@ -859,7 +966,10 @@ export default function ChatPage() {
             <>
               <ChatHeader
                 conversation={selectedConversation}
-                onBack={() => setSelectedConversation(null)}
+                onBack={() => {
+                  selectedConversationIdRef.current = null;
+                  setSelectedConversation(null);
+                }}
                 onOpenGroupInfo={handleOpenGroupInfo}
               />
               <MessageList

@@ -25,7 +25,7 @@ export async function searchUsers(query: string) {
 }
 
 export async function startConversation(userId: string) {
-  const response = await api.post("/conversations", {
+  const response = await api.post<unknown>("/conversations", {
     userId
   });
 

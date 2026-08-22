@@ -406,7 +406,9 @@ Verified response:
 
 The assignment requires empty messages not to be sendable, but the backend accepted an empty message during testing.
 
-The frontend implementation will therefore prevent empty or whitespace-only messages before sending, for example by validating the trimmed message text.
+The frontend implementation therefore prevents empty or whitespace-only messages by validating trimmed text before sending.
+
+LoopChat does not use this REST endpoint for normal message sending. It emits the Socket.io `message:send` event once so a message is not submitted through both REST and Socket.io.
 
 #### Invalid Conversation
 
@@ -811,6 +813,16 @@ Authentication required: No
   "status": "ok"
 }
 ```
+
+## Frontend Integration Notes
+
+- `GET /conversations/{id}/messages` is used for initial history only. Realtime events are appended directly and do not trigger a history refetch.
+- REST and Socket message payloads are normalized into one internal `{ id, conversation, sender, text, createdAt }` shape.
+- `message:send` is the application's only normal send path. `POST /messages` is documented because it was inspected, but it is not also called by the composer.
+- `message:new` updates the active message list when applicable and updates/reorders the matching sidebar row immediately. A silent `GET /conversations` request then reconciles server state.
+- `conversation:updated` refreshes group metadata but is not treated as a message or unread event.
+- The API exposes no verified unread count, last-read timestamp, or read-receipt endpoint. Sidebar unread badges are therefore client-session indicators and reset on refresh.
+- Admin-only controls are hidden in the frontend for usability. The API's authorization checks remain the security boundary.
 
 ## Observed API Notes
 
