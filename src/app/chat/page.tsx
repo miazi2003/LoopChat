@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Socket } from "socket.io-client";
+import { toast } from "sonner";
 import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { MessageInput } from "@/components/chat/message-input";
@@ -26,6 +27,7 @@ import {
 import { getMessages } from "@/services/messages";
 import type { User } from "@/types/auth";
 import type { ChatUser, Conversation, Message } from "@/types/chat";
+import { getApiErrorMessage } from "@/utils/error";
 import {
   isMatchingOptimisticMessage,
   normalizeSocketMessage,
@@ -71,8 +73,12 @@ export default function ChatPage() {
   const [addMemberResults, setAddMemberResults] = useState<ChatUser[]>([]);
   const [selectedAddMembers, setSelectedAddMembers] = useState<ChatUser[]>([]);
   const [isAddMemberSearching, setIsAddMemberSearching] = useState(false);
-  const [groupActionError, setGroupActionError] = useState("");
   const [isGroupActionLoading, setIsGroupActionLoading] = useState(false);
+  const [isRenamingGroup, setIsRenamingGroup] = useState(false);
+  const [isAddingMembers, setIsAddingMembers] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [promotingMemberId, setPromotingMemberId] = useState<string | null>(null);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const selectedConversationIdRef = useRef<string | null>(null);
   const isNearBottomRef = useRef(true);
@@ -149,6 +155,51 @@ export default function ChatPage() {
     []
   );
 
+  const updateConversationPreview = useCallback((message: Message) => {
+    setConversations((currentConversations) => {
+      const matchingConversation = currentConversations.find(
+        (conversation) => conversation._id === message.conversation
+      );
+
+      if (!matchingConversation) {
+        return currentConversations;
+      }
+
+      const incomingTime = new Date(message.createdAt).getTime();
+
+      if (!Number.isFinite(incomingTime)) {
+        return currentConversations;
+      }
+
+      const currentTime = new Date(
+        matchingConversation.lastMessage?.createdAt ??
+          matchingConversation.updatedAt
+      ).getTime();
+
+      if (Number.isFinite(currentTime) && currentTime > incomingTime) {
+        return currentConversations;
+      }
+
+      const updatedConversation: Conversation = {
+        ...matchingConversation,
+        lastMessage: {
+          ...matchingConversation.lastMessage,
+          text: message.text,
+          sender: message.sender,
+          createdAt: message.createdAt
+        },
+        updatedAt: new Date(message.createdAt).toISOString()
+      };
+
+      return [
+        updatedConversation,
+        ...currentConversations.filter(
+          (conversation) => conversation._id !== message.conversation
+        )
+      ];
+    });
+  }, []);
+
   useEffect(() => {
     async function checkAuth() {
       const token = localStorage.getItem("token");
@@ -192,6 +243,8 @@ export default function ChatPage() {
       const normalizedMessage = normalizeSocketMessage(incomingMessage);
       const activeConversationId = selectedConversationIdRef.current;
 
+      updateConversationPreview(normalizedMessage);
+
       if (activeConversationId === normalizedMessage.conversation) {
         setMessages((currentMessages) => {
           const exists = currentMessages.some(
@@ -222,7 +275,9 @@ export default function ChatPage() {
         }
       }
 
-      loadConversations(undefined, false);
+      void loadConversations(undefined, false).then(() => {
+        updateConversationPreview(normalizedMessage);
+      });
     }
 
     function handleConversationUpdated(updatedConversation: Conversation) {
@@ -237,7 +292,12 @@ export default function ChatPage() {
       socket.off("message:new", handleNewMessage);
       socket.off("conversation:updated", handleConversationUpdated);
     };
-  }, [isSocketReady, loadConversations, updateSelectedGroup]);
+  }, [
+    isSocketReady,
+    loadConversations,
+    updateConversationPreview,
+    updateSelectedGroup
+  ]);
 
   useEffect(() => {
     const trimmedSearch = searchText.trim();
@@ -313,8 +373,8 @@ export default function ChatPage() {
               !selectedIds.includes(result._id)
           )
         );
-      } catch {
-        setGroupActionError("Failed to search users.");
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Failed to search users."));
       } finally {
         setIsAddMemberSearching(false);
       }
@@ -423,7 +483,6 @@ export default function ChatPage() {
     setSelectedConversation(conversation);
     setIsGroupInfoOpen(false);
     setIsAddMemberPanelOpen(false);
-    setGroupActionError("");
     setSelectedAddMembers([]);
     setAddMemberSearchText("");
     setAddMemberResults([]);
@@ -431,7 +490,6 @@ export default function ChatPage() {
 
   function handleOpenGroupInfo() {
     setRenameText(selectedConversation?.name ?? "");
-    setGroupActionError("");
     setIsAddMemberPanelOpen(false);
     setSelectedAddMembers([]);
     setAddMemberSearchText("");
@@ -454,7 +512,6 @@ export default function ChatPage() {
     setAddMemberSearchText("");
     setAddMemberResults([]);
     setIsAddMemberSearching(false);
-    setGroupActionError("");
   }
 
   function handleGroupSearchChange(value: string) {
@@ -481,7 +538,6 @@ export default function ChatPage() {
     }
 
     setAddMemberResults([]);
-    setGroupActionError("");
     setIsAddMemberSearching(true);
   }
 
@@ -574,6 +630,7 @@ export default function ChatPage() {
     };
 
     setMessages((currentMessages) => [...currentMessages, optimisticMessage]);
+    updateConversationPreview(optimisticMessage);
     setIsSending(true);
     setSendError("");
 
@@ -597,11 +654,14 @@ export default function ChatPage() {
             )
           );
           setSendError("Failed to send message.");
+          void loadConversations(undefined, false);
           return;
         }
 
         setNewMessageText("");
-        loadConversations();
+        void loadConversations(undefined, false).then(() => {
+          updateConversationPreview(optimisticMessage);
+        });
       }
     );
   }
@@ -617,18 +677,17 @@ export default function ChatPage() {
 
   async function handleRenameGroup() {
     if (!selectedConversation || selectedConversation.type !== "group") {
-      return;
+      return false;
     }
 
     const trimmedName = renameText.trim();
 
     if (!trimmedName) {
-      setGroupActionError("Group name is required.");
-      return;
+      toast.error("Group name is required.");
+      return false;
     }
 
-    setIsGroupActionLoading(true);
-    setGroupActionError("");
+    setIsRenamingGroup(true);
 
     try {
       const updatedGroup = await renameGroup(
@@ -637,21 +696,24 @@ export default function ChatPage() {
       );
       setSelectedConversation(updatedGroup);
       setRenameText(updatedGroup.name ?? "");
-      await loadConversations(updatedGroup);
-    } catch {
-      setGroupActionError("Failed to rename group.");
+      await loadConversations(updatedGroup, false);
+      toast.success("Group renamed successfully");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to rename group"));
+      return false;
     } finally {
-      setIsGroupActionLoading(false);
+      setIsRenamingGroup(false);
     }
   }
 
   async function handleAddMembers() {
     if (!selectedConversation || selectedAddMembers.length === 0) {
-      return;
+      return false;
     }
 
-    setIsGroupActionLoading(true);
-    setGroupActionError("");
+    const memberCount = selectedAddMembers.length;
+    setIsAddingMembers(true);
 
     try {
       const updatedGroup = await addParticipants(
@@ -664,20 +726,26 @@ export default function ChatPage() {
       setAddMemberResults([]);
       setIsAddMemberPanelOpen(false);
       await loadConversations(updatedGroup, false);
-    } catch {
-      setGroupActionError("Failed to add members.");
+      toast.success(
+        memberCount === 1
+          ? "Member added successfully"
+          : "Members added successfully"
+      );
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to add member"));
+      return false;
     } finally {
-      setIsGroupActionLoading(false);
+      setIsAddingMembers(false);
     }
   }
 
   async function handleRemoveMember(member: ChatUser) {
-    if (!selectedConversation || !window.confirm(`Remove ${member.name}?`)) {
-      return;
+    if (!selectedConversation) {
+      return false;
     }
 
-    setIsGroupActionLoading(true);
-    setGroupActionError("");
+    setRemovingMemberId(member._id);
 
     try {
       const updatedGroup = await removeParticipant(
@@ -685,21 +753,23 @@ export default function ChatPage() {
         member._id
       );
       setSelectedConversation(updatedGroup);
-      await loadConversations(updatedGroup);
-    } catch {
-      setGroupActionError("Failed to remove member.");
+      await loadConversations(updatedGroup, false);
+      toast.success("Member removed");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to remove member"));
+      return false;
     } finally {
-      setIsGroupActionLoading(false);
+      setRemovingMemberId(null);
     }
   }
 
   async function handlePromoteAdmin(member: ChatUser) {
     if (!selectedConversation) {
-      return;
+      return false;
     }
 
-    setIsGroupActionLoading(true);
-    setGroupActionError("");
+    setPromotingMemberId(member._id);
 
     try {
       const updatedGroup = await promoteAdmin(
@@ -707,31 +777,36 @@ export default function ChatPage() {
         member._id
       );
       setSelectedConversation(updatedGroup);
-      await loadConversations(updatedGroup);
-    } catch {
-      setGroupActionError("Failed to promote member.");
+      await loadConversations(updatedGroup, false);
+      toast.success("Member promoted to admin");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to promote member"));
+      return false;
     } finally {
-      setIsGroupActionLoading(false);
+      setPromotingMemberId(null);
     }
   }
 
   async function handleLeaveGroup() {
-    if (!selectedConversation || !user || !window.confirm("Leave this group?")) {
-      return;
+    if (!selectedConversation || !user) {
+      return false;
     }
 
-    setIsGroupActionLoading(true);
-    setGroupActionError("");
+    setIsLeavingGroup(true);
 
     try {
       await removeParticipant(selectedConversation._id, user._id);
       setSelectedConversation(null);
       setIsGroupInfoOpen(false);
-      await loadConversations();
-    } catch {
-      setGroupActionError("Failed to leave group.");
+      await loadConversations(undefined, false);
+      toast.success("You left the group");
+      return true;
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to leave group"));
+      return false;
     } finally {
-      setIsGroupActionLoading(false);
+      setIsLeavingGroup(false);
     }
   }
 
@@ -852,8 +927,11 @@ export default function ChatPage() {
           addMemberResults={addMemberResults}
           selectedAddMembers={selectedAddMembers}
           isAddMemberSearching={isAddMemberSearching}
-          isLoading={isGroupActionLoading}
-          error={groupActionError}
+          isRenaming={isRenamingGroup}
+          isAddingMembers={isAddingMembers}
+          removingMemberId={removingMemberId}
+          promotingMemberId={promotingMemberId}
+          isLeaving={isLeavingGroup}
           onClose={handleCloseGroupInfo}
           onOpenAddMemberPanel={() => setIsAddMemberPanelOpen(true)}
           onCloseAddMemberPanel={handleCloseAddMemberPanel}

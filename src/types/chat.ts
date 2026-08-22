@@ -13,6 +13,8 @@ export type Conversation = {
   participants?: ChatUser[];
   lastMessage?: {
     text?: string;
+    sender?: string;
+    createdAt?: string | number;
   };
   updatedAt: string;
   participant?: ChatUser;

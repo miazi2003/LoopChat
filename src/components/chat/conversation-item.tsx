@@ -36,7 +36,9 @@ export function ConversationItem({
             {name}
           </span>
           <span className="shrink-0 text-[10px] text-[#929b94]">
-            {formatMessageTime(conversation.updatedAt)}
+            {formatMessageTime(
+              conversation.lastMessage?.createdAt ?? conversation.updatedAt
+            )}
           </span>
         </span>
         <span className="mt-1 block truncate text-xs text-[#7b867e]">
