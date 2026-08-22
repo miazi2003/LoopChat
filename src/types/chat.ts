@@ -6,12 +6,16 @@ export type ChatUser = {
 
 export type Conversation = {
   _id: string;
-  type: "direct";
+  type: "direct" | "group";
+  name?: string;
+  createdBy?: string;
+  admins?: string[];
+  participants?: ChatUser[];
   lastMessage?: {
     text?: string;
   };
   updatedAt: string;
-  participant: ChatUser;
+  participant?: ChatUser;
 };
 
 export type Message = {
