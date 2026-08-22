@@ -50,7 +50,7 @@ When hosted in one deployment, `/` is the landing page and `/login` starts the a
 - Axios
 - Socket.io Client
 - Lucide React
-- Deployment platform: [Add deployment platform]
+- Deployment: Vercel
 
 The project intentionally avoids unnecessary state-management libraries. React state, effects, and refs are used to keep the implementation simple and easy to explain.
 
