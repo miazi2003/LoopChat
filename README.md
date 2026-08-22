@@ -226,28 +226,24 @@ Optimistic messages were also added so the sender sees their own message immedia
 - Potentially using a server-state library if the application grew significantly
 
 ---
-
 ## Testing
 
-Verified while preparing this README:
+Verified manually during development and after deployment:
 
 - `npm run lint` passes
 - `npm run build` passes
-- `/` renders the landing page
-- `/login` serves the login/register route
-- `/chat` serves the authenticated chat application route
-
-The following implemented flows should be checked with real browser sessions before final submission:
-
-- Login/logout flow
-- Direct conversation flow
-- Real-time direct messages
-- Group creation
-- Group messaging
-- Group management
-- Real-time updates
-- Smart auto-scroll behavior
-- Responsive chat UI
+- Landing page renders correctly
+- Login and logout flow works
+- Direct conversation flow works
+- Real-time direct messaging works without page refresh
+- Own messages appear immediately using optimistic UI
+- Conversation updates refresh silently in the background
+- Group creation works
+- Group messaging works in real time
+- Group management actions work
+- Smart auto-scroll works as expected
+- Mobile/responsive chat layout works
+- Production deployment was tested successfully
 
 No automated end-to-end test suite is included.
 
