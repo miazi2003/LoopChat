@@ -531,6 +531,13 @@ export default function ChatPage() {
     );
   }
 
+  function handleMessageKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   async function handleRenameGroup() {
     if (!selectedConversation || selectedConversation.type !== "group") {
       return;
@@ -663,7 +670,11 @@ export default function ChatPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col border-x border-slate-200 bg-white md:flex-row">
-        <aside className="w-full border-b border-slate-200 p-5 md:w-80 md:border-b-0 md:border-r">
+        <aside
+          className={`w-full border-b border-slate-200 p-5 md:block md:w-80 md:border-b-0 md:border-r ${
+            selectedConversation ? "hidden" : "block"
+          }`}
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-normal">LoopChat</h1>
@@ -790,11 +801,23 @@ export default function ChatPage() {
           </div>
         </aside>
 
-        <section className="flex min-h-[360px] flex-1 flex-col">
+        <section
+          className={`min-h-[100vh] flex-1 flex-col md:flex ${
+            selectedConversation ? "flex" : "hidden"
+          }`}
+        >
           {selectedConversation ? (
             <>
               <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-                <div>
+                <div className="flex min-w-0 items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedConversation(null)}
+                    className="mt-0.5 rounded-md border border-slate-300 px-2 py-1 text-sm font-medium transition hover:bg-slate-100 md:hidden"
+                  >
+                    Back
+                  </button>
+                  <div className="min-w-0">
                   <h2 className="text-lg font-semibold tracking-normal">
                     {getConversationName(selectedConversation)}
                   </h2>
@@ -803,6 +826,7 @@ export default function ChatPage() {
                       ? `${selectedConversation.participants?.length ?? 0} members`
                       : selectedConversation.participant?.phone}
                   </p>
+                  </div>
                 </div>
                 {selectedConversation.type === "group" ? (
                   <button
@@ -834,7 +858,7 @@ export default function ChatPage() {
                   <p className="text-center text-sm text-slate-600">
                     No messages yet.
                     <br />
-                    Start the conversation.
+                    Send the first message.
                   </p>
                 ) : null}
 
@@ -892,13 +916,15 @@ export default function ChatPage() {
                 {sendError ? (
                   <p className="mb-2 text-sm text-red-600">{sendError}</p>
                 ) : null}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
+                <div className="flex items-end gap-2">
+                  <textarea
+                    rows={1}
                     value={newMessageText}
                     onChange={(event) => setNewMessageText(event.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                    onKeyDown={handleMessageKeyDown}
+                    className="max-h-32 min-h-10 min-w-0 flex-1 resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                     placeholder="Type a message..."
+                    aria-label="Message text"
                   />
                   <button
                     type="submit"
@@ -912,14 +938,16 @@ export default function ChatPage() {
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6">
-              <p className="text-sm text-slate-600">Select a conversation</p>
+              <p className="text-sm text-slate-600">
+                Select a conversation to start chatting.
+              </p>
             </div>
           )}
         </section>
       </div>
 
       {isCreatingGroup ? (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/30 px-4">
+        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-slate-950/30 px-4 py-4 sm:items-center">
           <section className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -931,6 +959,7 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={() => setIsCreatingGroup(false)}
+                aria-label="Close new group panel"
                 className="text-sm text-slate-600 hover:text-slate-950"
               >
                 Close
@@ -962,6 +991,12 @@ export default function ChatPage() {
 
             {isGroupSearching ? (
               <p className="mt-2 text-sm text-slate-600">Searching users...</p>
+            ) : null}
+
+            {!isGroupSearching &&
+            groupSearchText.trim() &&
+            groupSearchResults.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-600">No users found.</p>
             ) : null}
 
             {groupSearchResults.length > 0 ? (
@@ -1015,6 +1050,10 @@ export default function ChatPage() {
               <p className="mt-3 text-sm text-red-600">{groupError}</p>
             ) : null}
 
+            {isGroupActionLoading ? (
+              <p className="mt-3 text-sm text-slate-600">Creating group...</p>
+            ) : null}
+
             <button
               type="button"
               onClick={handleCreateGroup}
@@ -1032,7 +1071,7 @@ export default function ChatPage() {
       ) : null}
 
       {isGroupInfoOpen && selectedConversation?.type === "group" ? (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/30 px-4">
+        <div className="fixed inset-0 z-20 flex items-start justify-center overflow-y-auto bg-slate-950/30 px-4 py-4 sm:items-center">
           <section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1046,6 +1085,7 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={() => setIsGroupInfoOpen(false)}
+                aria-label="Close group info"
                 className="text-sm text-slate-600 hover:text-slate-950"
               >
                 Close
@@ -1150,6 +1190,11 @@ export default function ChatPage() {
                 {isAddMemberSearching ? (
                   <p className="mt-2 text-sm text-slate-600">Searching users...</p>
                 ) : null}
+                {!isAddMemberSearching &&
+                addMemberSearchText.trim() &&
+                addMemberResults.length === 0 ? (
+                  <p className="mt-2 text-sm text-slate-600">No users found.</p>
+                ) : null}
                 {addMemberResults.length > 0 ? (
                   <div className="mt-2 max-h-28 divide-y divide-slate-200 overflow-y-auto rounded-md border border-slate-200">
                     {addMemberResults.map((result) => (
@@ -1203,6 +1248,10 @@ export default function ChatPage() {
 
             {groupActionError ? (
               <p className="mt-3 text-sm text-red-600">{groupActionError}</p>
+            ) : null}
+
+            {isGroupActionLoading ? (
+              <p className="mt-3 text-sm text-slate-600">Updating group...</p>
             ) : null}
 
             <button
