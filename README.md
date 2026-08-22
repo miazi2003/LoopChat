@@ -208,9 +208,11 @@ See [docs/API.md](docs/API.md) for verified payloads, responses, and Socket even
 
 ## AI Usage
 
-AI tools were used for planning, boilerplate assistance, UI direction exploration, debugging realtime/loading/scroll issues, architecture review, and documentation drafting. Outputs were reviewed against the real repository and observed API behavior. Suggestions were adapted, corrected, or rejected when they did not match the assignment or existing code.
+AI tools were used as a development assistant for tasks such as boilerplate generation, UI direction exploration, debugging suggestions, documentation drafting, and reviewing potential edge cases.
 
-Manual work included API inspection, response-shape verification, browser flow checks during development, component integration, and reviewing generated changes. The final repository still requires the evaluator's normal authenticated two-user QA; AI-assisted review is not a substitute for runtime verification.
+The core application logic, API integration, realtime Socket.io flow, message handling, group functionality, state management decisions, and overall implementation were developed and integrated by me. I also manually inspected the provided API, verified response shapes, tested application flows in the browser, reviewed generated suggestions, and adjusted or rejected them whenever they did not match the actual API behavior or project requirements.
+
+AI was mainly used to speed up repetitive work and provide a second perspective during debugging and review, rather than as a replacement for understanding or implementing the application.
 
 ## Challenges and Lessons
 
