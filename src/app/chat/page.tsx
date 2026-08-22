@@ -46,6 +46,19 @@ function normalizeSocketMessage(message: SocketMessage): Message {
   };
 }
 
+function isMatchingOptimisticMessage(message: Message, incomingMessage: Message) {
+  const messageTime = Number(message.createdAt);
+  const incomingTime = Number(incomingMessage.createdAt);
+
+  return (
+    message.id.startsWith("temp-") &&
+    message.conversation === incomingMessage.conversation &&
+    message.sender === incomingMessage.sender &&
+    message.text === incomingMessage.text &&
+    Math.abs(messageTime - incomingTime) < 10000
+  );
+}
+
 function getConversationName(conversation: Conversation) {
   if (conversation.type === "group") {
     return conversation.name || "Group conversation";
@@ -108,12 +121,20 @@ export default function ChatPage() {
   const [groupActionError, setGroupActionError] = useState("");
   const [isGroupActionLoading, setIsGroupActionLoading] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const selectedConversationRef = useRef<Conversation | null>(null);
+  const selectedConversationIdRef = useRef<string | null>(null);
+  const isNearBottomRef = useRef(true);
   const messageListRef = useRef<HTMLDivElement | null>(null);
+  const selectedConversationId = selectedConversation?._id;
 
   const loadConversations = useCallback(
-    async (conversationToSelect?: Conversation | ChatUser) => {
-      setIsLoadingConversations(true);
+    async (
+      conversationToSelect?: Conversation | ChatUser,
+      showLoading = true
+    ) => {
+      if (showLoading) {
+        setIsLoadingConversations(true);
+      }
+
       setConversationError("");
 
       try {
@@ -136,7 +157,9 @@ export default function ChatPage() {
       } catch {
         setConversationError("Failed to load conversations.");
       } finally {
-        setIsLoadingConversations(false);
+        if (showLoading) {
+          setIsLoadingConversations(false);
+        }
       }
     },
     []
@@ -207,29 +230,43 @@ export default function ChatPage() {
 
     function handleNewMessage(incomingMessage: SocketMessage) {
       const normalizedMessage = normalizeSocketMessage(incomingMessage);
-      const activeConversation = selectedConversationRef.current;
+      const activeConversationId = selectedConversationIdRef.current;
 
-      if (activeConversation?._id === normalizedMessage.conversation) {
+      if (activeConversationId === normalizedMessage.conversation) {
         setMessages((currentMessages) => {
           const exists = currentMessages.some(
             (message) => message.id === normalizedMessage.id
           );
 
-          return exists ? currentMessages : [...currentMessages, normalizedMessage];
+          if (exists) {
+            return currentMessages;
+          }
+
+          const optimisticIndex = currentMessages.findIndex((message) =>
+            isMatchingOptimisticMessage(message, normalizedMessage)
+          );
+
+          if (optimisticIndex >= 0) {
+            return currentMessages.map((message, index) =>
+              index === optimisticIndex ? normalizedMessage : message
+            );
+          }
+
+          return [...currentMessages, normalizedMessage];
         });
 
-        if (isNearBottom) {
+        if (isNearBottomRef.current) {
           window.setTimeout(scrollToBottom, 0);
         } else {
           setShowNewMessagesButton(true);
         }
       }
 
-      loadConversations();
+      loadConversations(undefined, false);
     }
 
     function handleConversationUpdated(updatedConversation: Conversation) {
-      loadConversations();
+      loadConversations(undefined, false);
       updateSelectedGroup(updatedConversation);
     }
 
@@ -241,7 +278,6 @@ export default function ChatPage() {
       socket.off("conversation:updated", handleConversationUpdated);
     };
   }, [
-    isNearBottom,
     isSocketReady,
     loadConversations,
     scrollToBottom,
@@ -331,12 +367,16 @@ export default function ChatPage() {
   }, [addMemberSearchText, selectedAddMembers, selectedConversation, user]);
 
   useEffect(() => {
-    selectedConversationRef.current = selectedConversation;
+    selectedConversationIdRef.current = selectedConversation?._id ?? null;
   }, [selectedConversation]);
 
   useEffect(() => {
+    isNearBottomRef.current = isNearBottom;
+  }, [isNearBottom]);
+
+  useEffect(() => {
     async function loadSelectedMessages() {
-      if (!selectedConversation) {
+      if (!selectedConversationId) {
         setMessages([]);
         return;
       }
@@ -348,7 +388,7 @@ export default function ChatPage() {
       setIsNearBottom(true);
 
       try {
-        const nextMessages = await getMessages(selectedConversation._id);
+        const nextMessages = await getMessages(selectedConversationId);
         setMessages(nextMessages);
         window.setTimeout(scrollToBottom, 0);
       } catch {
@@ -359,7 +399,7 @@ export default function ChatPage() {
     }
 
     loadSelectedMessages();
-  }, [scrollToBottom, selectedConversation]);
+  }, [scrollToBottom, selectedConversationId]);
 
   useEffect(() => {
     if (isNearBottom) {
@@ -504,12 +544,25 @@ export default function ChatPage() {
 
     const trimmedText = newMessageText.trim();
 
-    if (!trimmedText || !selectedConversation || !socketRef.current) {
+    if (!trimmedText || !selectedConversation || !user || !socketRef.current) {
       return;
     }
 
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      conversation: selectedConversation._id,
+      sender: user._id,
+      text: trimmedText,
+      createdAt: Date.now()
+    };
+
+    setMessages((currentMessages) => [...currentMessages, optimisticMessage]);
     setIsSending(true);
     setSendError("");
+
+    if (isNearBottom) {
+      window.setTimeout(scrollToBottom, 0);
+    }
 
     socketRef.current.emit(
       "message:send",
@@ -521,6 +574,9 @@ export default function ChatPage() {
         setIsSending(false);
 
         if (acknowledgement?.ok === false) {
+          setMessages((currentMessages) =>
+            currentMessages.filter((message) => message.id !== optimisticMessage.id)
+          );
           setSendError("Failed to send message.");
           return;
         }
@@ -746,17 +802,17 @@ export default function ChatPage() {
             <h2 className="text-sm font-semibold">Conversations</h2>
 
             <div className="mt-3">
-              {isLoadingConversations ? (
+              {isLoadingConversations && conversations.length === 0 ? (
                 <p className="text-sm text-slate-600">Loading conversations...</p>
               ) : null}
 
-              {!isLoadingConversations && conversationError ? (
+              {conversationError && conversations.length === 0 ? (
                 <p className="text-sm text-red-600">{conversationError}</p>
               ) : null}
 
               {!isLoadingConversations &&
-              !conversationError &&
-              conversations.length === 0 ? (
+              conversations.length === 0 &&
+              !conversationError ? (
                 <p className="text-sm text-slate-600">
                   No conversations yet.
                   <br />
@@ -764,9 +820,7 @@ export default function ChatPage() {
                 </p>
               ) : null}
 
-              {!isLoadingConversations &&
-              !conversationError &&
-              conversations.length > 0 ? (
+              {conversations.length > 0 ? (
                 <div className="divide-y divide-slate-200 rounded-md border border-slate-200">
                   {conversations.map((conversation) => {
                     const isSelected =
@@ -844,13 +898,13 @@ export default function ChatPage() {
                 onScroll={handleMessageScroll}
                 className="relative flex-1 overflow-y-auto px-5 py-4"
               >
-                {isLoadingMessages ? (
+                {isLoadingMessages && messages.length === 0 ? (
                   <p className="text-center text-sm text-slate-600">
                     Loading messages...
                   </p>
                 ) : null}
 
-                {!isLoadingMessages && messageError ? (
+                {messageError && messages.length === 0 ? (
                   <p className="text-center text-sm text-red-600">{messageError}</p>
                 ) : null}
 
@@ -862,7 +916,7 @@ export default function ChatPage() {
                   </p>
                 ) : null}
 
-                {!isLoadingMessages && !messageError && messages.length > 0 ? (
+                {messages.length > 0 ? (
                   <div className="space-y-3">
                     {messages.map((message) => {
                       const isOwnMessage = message.sender === user._id;
