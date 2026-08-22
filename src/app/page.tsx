@@ -1,213 +1,278 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
+  ArrowDown,
   ArrowRight,
-  ChevronRight,
+  ChevronDown,
+  LockKeyhole,
   MessageCircle,
   MessagesSquare,
-  Search,
   Send,
   Sparkles,
   Users,
   Zap
 } from "lucide-react";
 
-const features = [
+const heroSignals = [
   {
-    title: "Realtime Messaging",
-    description: "Messages arrive instantly through Socket.io, keeping active chats in sync.",
-    icon: Zap
+    label: "Direct messages",
+    icon: MessageCircle,
+    iconClassName: "bg-cyan-300 text-cyan-950",
+    positionClassName: "lg:-translate-x-3 lg:rotate-[3deg]"
   },
   {
-    title: "Direct Conversations",
-    description: "Search by name or phone and start one-to-one conversations quickly.",
-    icon: MessageCircle
+    label: "Group conversations",
+    icon: Users,
+    iconClassName: "bg-amber-300 text-amber-950",
+    positionClassName: "lg:translate-x-4 lg:-rotate-[2deg]"
   },
   {
-    title: "Group Conversations",
-    description: "Create groups, manage members, promote admins, and keep teams aligned.",
-    icon: Users
+    label: "Realtime delivery",
+    icon: Zap,
+    iconClassName: "bg-lime-300 text-lime-950",
+    positionClassName: "lg:-translate-x-1 lg:rotate-[2deg]"
   },
   {
-    title: "Smart Auto-Scroll",
-    description: "New messages stay visible when you are at the bottom, without interrupting reading.",
-    icon: Sparkles
+    label: "Smart updates",
+    icon: Sparkles,
+    iconClassName: "bg-rose-300 text-rose-950",
+    positionClassName: "lg:translate-x-6 lg:-rotate-[3deg]"
   }
 ];
 
-const flow = [
-  { label: "Search user", icon: Search },
-  { label: "Start conversation", icon: MessageCircle },
-  { label: "Send message", icon: Send },
-  { label: "Realtime delivery", icon: Zap }
+const features = [
+  {
+    title: "Direct conversations",
+    description: "Find people by name or phone and start talking in a few taps.",
+    icon: MessageCircle,
+    color: "bg-cyan-100 text-cyan-800"
+  },
+  {
+    title: "Group spaces",
+    description: "Bring people together, manage members, and keep every plan moving.",
+    icon: Users,
+    color: "bg-amber-100 text-amber-800"
+  },
+  {
+    title: "Live delivery",
+    description: "Messages arrive through Socket.io without refreshing the conversation.",
+    icon: Zap,
+    color: "bg-lime-100 text-lime-800"
+  },
+  {
+    title: "Thoughtful scrolling",
+    description: "Stay with what you are reading and jump to new messages when ready.",
+    icon: Sparkles,
+    color: "bg-rose-100 text-rose-800"
+  }
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-slate-950 text-white">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(20,184,166,0.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(99,102,241,0.2),transparent_28%),linear-gradient(180deg,#020617,#0f172a_52%,#020617)]" />
+    <main className="overflow-hidden bg-[#f8fbfa] text-[#11373c]">
+      <div className="relative bg-[#f8fbfa] pb-16">
+        <section
+          className="relative h-[760px] min-h-[680px] w-full max-w-[100vw] overflow-hidden sm:h-[720px] lg:h-[min(820px,90svh)] lg:min-h-[650px]"
+          style={{ clipPath: "ellipse(110% 100% at 50% 0%)" }}
+        >
+          <Image
+            src="/images/loopchat-hero.png"
+            alt="A LoopChat user smiling while messaging from their phone"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[52%_center] sm:object-center"
+          />
+          <div className="absolute inset-0 bg-[#063f49]/15" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,40,48,0.9)_0%,rgba(2,48,57,0.52)_30%,rgba(2,48,57,0.06)_56%,rgba(2,40,48,0.52)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(1,33,39,0.74)_0%,transparent_38%)] lg:hidden" />
 
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/80 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Link href="/" className="text-lg font-semibold tracking-normal">
-            LoopChat
-          </Link>
-          <div className="hidden items-center gap-6 text-sm text-slate-300 sm:flex">
-            <a href="#features" className="transition hover:text-white">
-              Features
-            </a>
-            <a href="#experience" className="transition hover:text-white">
-              Experience
-            </a>
-          </div>
-          <Link
-            href="/login"
-            className="rounded-full border border-white/15 bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-slate-200"
-          >
-            Open LoopChat
-          </Link>
-        </nav>
-      </header>
+          <header className="absolute inset-x-0 top-0 z-20">
+            <nav className="mx-auto flex w-full min-w-0 max-w-[100vw] items-center justify-between px-5 py-5 sm:px-8 lg:max-w-7xl lg:px-10 lg:py-7">
+              <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-white">
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-[#075763]">
+                  <MessagesSquare size={18} strokeWidth={2.4} />
+                </span>
+                LoopChat
+              </Link>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-[1fr_0.95fr] md:py-24">
-        <div>
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-sm text-teal-100">
-            <span className="h-2 w-2 rounded-full bg-teal-300" />
-            Realtime chat for direct and group conversations
-          </p>
-          <h1 className="max-w-3xl text-5xl font-semibold leading-tight tracking-normal text-white md:text-6xl">
-            Conversations that stay in sync.
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            LoopChat brings direct chats, group conversations, and realtime delivery
-            into a focused messaging experience that feels quick, clear, and easy to use.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-teal-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-200"
-            >
-              Start chatting
-              <ArrowRight size={16} />
-            </Link>
-            <a
-              href="#features"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Explore features
-              <ChevronRight size={16} />
-            </a>
-          </div>
-        </div>
+              <div className="hidden items-center gap-7 text-sm text-white/85 md:flex">
+                <a href="#features" className="transition hover:text-white">
+                  Features
+                </a>
+                <a href="#experience" className="transition hover:text-white">
+                  Experience
+                </a>
+                <a href="#how-it-works" className="transition hover:text-white">
+                  How it works
+                </a>
+                <a href="#features" className="flex items-center gap-1 transition hover:text-white">
+                  More
+                  <ChevronDown size={14} />
+                </a>
+              </div>
 
-        <ProductPreview />
-      </section>
+              <div className="flex shrink-0 items-center gap-3">
+                <Link
+                  href="/login"
+                  className="hidden text-sm font-medium text-white transition hover:text-white/75 sm:block"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-[#083f48] shadow-sm transition hover:bg-cyan-50 sm:px-4"
+                >
+                  Get started
+                  <ArrowRight size={15} />
+                </Link>
+              </div>
+            </nav>
+          </header>
 
-      <section className="mx-auto max-w-6xl px-5 py-8">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-slate-950/40 md:p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Product Showcase</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                A static preview inspired by the working chat app.
+          <div className="relative z-10 mx-auto grid h-full w-full min-w-0 max-w-[100vw] grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto] px-5 pb-24 pt-28 sm:px-8 lg:max-w-7xl lg:grid-cols-[1fr_1.05fr_0.9fr] lg:grid-rows-1 lg:items-center lg:px-10 lg:pb-20 lg:pt-24">
+            <div className="max-w-md self-center text-white lg:self-auto">
+              <p className="mb-4 flex items-center gap-2 text-sm font-medium text-cyan-100">
+                <span className="h-2 w-2 rounded-full bg-lime-300" />
+                Messaging that moves with you
               </p>
+              <h1 className="text-[clamp(2.7rem,6vw,5rem)] font-semibold leading-[1.02] tracking-normal text-white">
+                Talk now.
+                <br />
+                Stay in the loop.
+              </h1>
+              <p className="mt-5 max-w-sm text-base leading-7 text-white/78 sm:text-lg">
+                Direct chats, group conversations, and realtime delivery in one focused
+                place built for everyday connection.
+              </p>
+              <Link
+                href="/login"
+                className="mt-7 inline-flex items-center gap-3 rounded-full border border-white/35 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white hover:text-[#083f48]"
+              >
+                Start a conversation
+                <ArrowRight size={16} />
+              </Link>
             </div>
-            <span className="rounded-full bg-emerald-300/10 px-3 py-1 text-xs font-medium text-emerald-200">
-              Live ready
-            </span>
-          </div>
-          <ProductPreview large />
-        </div>
-      </section>
 
-      <section id="features" className="mx-auto max-w-6xl px-5 py-20">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl font-semibold tracking-normal">
-            Built around the core chat moments.
+            <div aria-hidden="true" className="hidden lg:block" />
+
+            <div className="flex min-w-0 flex-col items-end gap-2 self-end pb-2 lg:w-auto lg:justify-center lg:gap-3 lg:self-auto lg:pb-0">
+              {heroSignals.map((signal) => {
+                const Icon = signal.icon;
+
+                return (
+                  <div
+                    key={signal.label}
+                    className={`flex min-w-0 items-center gap-2 rounded-full border border-white/40 bg-white/90 py-1.5 pl-1.5 pr-2 text-[11px] font-semibold text-[#123b40] shadow-lg shadow-[#012f38]/15 backdrop-blur sm:pr-3 sm:text-xs ${signal.positionClassName}`}
+                  >
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-full ${signal.iconClassName}`}
+                    >
+                      <Icon size={14} />
+                    </span>
+                    <span>{signal.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <a
+          href="#features"
+          aria-label="Scroll to explore"
+          className="absolute bottom-2 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[11px] font-medium text-[#527278] transition hover:text-[#0b4f59]"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#b7c9c9] bg-white">
+            <ArrowDown size={14} />
+          </span>
+          Scroll to explore
+        </a>
+      </div>
+
+      <section id="features" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+        <div className="grid gap-8 border-b border-[#d4e1df] pb-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <p className="text-sm font-semibold uppercase text-[#158294]">Built for the conversation</p>
+          <h2 className="max-w-3xl text-4xl font-semibold leading-tight tracking-normal text-[#0b343a] sm:text-5xl">
+            Everything you need to keep people close and plans moving.
           </h2>
-          <p className="mt-3 text-slate-300">
-            The essentials are clear, responsive, and connected to verified API behavior.
-          </p>
         </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => {
             const Icon = feature.icon;
 
             return (
               <article
                 key={feature.title}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:-translate-y-1 hover:bg-white/[0.07]"
+                className="border-b border-[#d4e1df] py-8 sm:px-6 sm:first:pl-0 lg:border-b-0 lg:border-r lg:px-7 lg:last:border-r-0 lg:last:pr-0"
               >
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-300/10 text-teal-200">
+                <span className={`flex h-11 w-11 items-center justify-center rounded-md ${feature.color}`}>
                   <Icon size={21} />
-                </div>
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  {feature.description}
-                </p>
+                </span>
+                <h3 className="mt-6 text-lg font-semibold text-[#0b343a]">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#527278]">{feature.description}</p>
               </article>
             );
           })}
         </div>
       </section>
 
-      <section id="experience" className="mx-auto max-w-6xl px-5 py-10">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-6 md:p-8">
-          <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-center">
-            <div>
-              <h2 className="text-3xl font-semibold tracking-normal">
-                From discovery to delivery in one clean loop.
-              </h2>
-              <p className="mt-3 leading-7 text-slate-300">
-                LoopChat keeps the path simple: find someone, open the conversation,
-                send the message, and watch updates arrive without refreshing.
+      <section id="experience" className="bg-[#082f35] text-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:px-10 lg:py-28">
+          <div className="max-w-lg">
+            <p className="text-sm font-semibold uppercase text-cyan-200">One clear experience</p>
+            <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-normal sm:text-5xl">
+              Your conversations, right where you left them.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-white/70">
+              LoopChat keeps direct and group messages organized while live updates arrive
+              quietly in the background.
+            </p>
+            <div className="mt-8 space-y-3 text-sm text-white/85">
+              <p className="flex items-center gap-3">
+                <LockKeyhole size={17} className="text-lime-300" />
+                Simple client-side sign in
+              </p>
+              <p className="flex items-center gap-3">
+                <Zap size={17} className="text-amber-300" />
+                Instant Socket.io updates
+              </p>
+              <p className="flex items-center gap-3">
+                <Users size={17} className="text-rose-300" />
+                Direct and group conversations
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-4">
-              {flow.map((step, index) => {
-                const Icon = step.icon;
-
-                return (
-                  <div key={step.label} className="relative">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-300/10 text-indigo-200">
-                        <Icon size={20} />
-                      </div>
-                      <p className="text-sm font-medium">{step.label}</p>
-                    </div>
-                    {index < flow.length - 1 ? (
-                      <ArrowRight
-                        size={18}
-                        className="absolute -right-5 top-1/2 hidden -translate-y-1/2 text-slate-500 sm:block"
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
           </div>
+
+          <ChatPreview />
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-5 py-20 text-center">
-        <h2 className="text-4xl font-semibold tracking-normal">
-          Ready to start a conversation?
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-slate-300">
-          Open LoopChat, sign in with a phone number, and jump into direct or group
-          messaging.
-        </p>
-        <Link
-          href="/login"
-          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
-        >
-          Open LoopChat
-          <ArrowRight size={16} />
-        </Link>
+      <section id="how-it-works" className="bg-[#f3c96b] px-5 py-20 text-[#15363a] sm:px-8 lg:py-24">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+          <div>
+            <p className="text-sm font-semibold uppercase">Ready when you are</p>
+            <h2 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight tracking-normal sm:text-5xl">
+              Start the conversation. LoopChat keeps it moving.
+            </h2>
+          </div>
+          <Link
+            href="/login"
+            className="inline-flex shrink-0 items-center gap-3 rounded-full bg-[#0a3c43] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#062d33]"
+          >
+            Open LoopChat
+            <ArrowRight size={17} />
+          </Link>
+        </div>
       </section>
 
-      <footer className="border-t border-white/10 px-5 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-semibold text-white">LoopChat</p>
+      <footer className="bg-[#f8fbfa] px-5 py-8 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-sm text-[#527278] sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-2 font-semibold text-[#0b343a]">
+            <MessagesSquare size={17} />
+            LoopChat
+          </p>
           <p>Realtime conversations, made simple.</p>
         </div>
       </footer>
@@ -215,59 +280,51 @@ export default function Home() {
   );
 }
 
-function ProductPreview({ large = false }: { large?: boolean }) {
+function ChatPreview() {
   return (
-    <div
-      className={`relative rounded-3xl border border-white/10 bg-slate-900/90 p-3 shadow-2xl shadow-teal-950/20 ${
-        large ? "md:p-4" : ""
-      }`}
-    >
-      <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-teal-300/20 blur-2xl" />
-      <div className="relative grid overflow-hidden rounded-2xl border border-white/10 bg-slate-950 md:grid-cols-[220px_1fr]">
-        <aside className="border-b border-white/10 bg-white/[0.03] p-4 md:border-b-0 md:border-r">
-          <div className="mb-5 flex items-center gap-2">
-            <MessagesSquare size={18} className="text-teal-200" />
-            <span className="text-sm font-semibold">LoopChat</span>
-          </div>
-          <div className="space-y-2">
-            <PreviewConversation name="Maya Rahman" text="Message received just now" active />
-            <PreviewConversation name="Frontend Team" text="4 members · group" group />
-            <PreviewConversation name="Ari Khan" text="Let me check that" />
-          </div>
+    <div className="overflow-hidden rounded-lg border border-white/15 bg-[#f8fbfa] text-[#173b40] shadow-2xl shadow-black/20">
+      <div className="flex items-center justify-between border-b border-[#d8e3e1] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <MessagesSquare size={17} className="text-[#167b8b]" />
+          <span className="text-sm font-semibold">LoopChat</span>
+        </div>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-[#397078]">
+          <span className="h-2 w-2 rounded-full bg-lime-500" />
+          Live
+        </span>
+      </div>
+
+      <div className="grid min-h-[390px] grid-cols-[130px_1fr] sm:grid-cols-[190px_1fr]">
+        <aside className="border-r border-[#d8e3e1] bg-[#eef5f3] p-3 sm:p-4">
+          <p className="mb-3 text-xs font-semibold uppercase text-[#668187]">Conversations</p>
+          <PreviewConversation name="Maya" text="See you there!" active />
+          <PreviewConversation name="Project group" text="Ari: Sounds good" />
+          <PreviewConversation name="Rafi" text="Thanks!" />
         </aside>
 
-        <section className="min-h-[360px] p-4">
-          <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
-            <div>
-              <h3 className="font-semibold">Maya Rahman</h3>
-              <p className="text-xs text-slate-400">Direct conversation</p>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-300/10 px-3 py-1 text-xs text-emerald-200">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
-              realtime
-            </span>
+        <div className="flex min-w-0 flex-col bg-white">
+          <div className="border-b border-[#d8e3e1] px-4 py-3">
+            <p className="text-sm font-semibold">Maya Rahman</p>
+            <p className="text-xs text-[#6a858a]">Direct conversation</p>
           </div>
-
-          <div className="space-y-3">
-            <div className="max-w-[78%] rounded-2xl rounded-bl-md bg-white/10 px-4 py-3 text-sm text-slate-100">
-              Can we create a group for the project?
-              <p className="mt-1 text-right text-[11px] text-slate-400">10:22</p>
+          <div className="flex-1 space-y-3 p-4 sm:p-5">
+            <div className="max-w-[82%] rounded-lg bg-[#eef3f2] px-3 py-2 text-sm">
+              Are we still meeting at six?
             </div>
-            <div className="ml-auto max-w-[78%] rounded-2xl rounded-br-md bg-teal-300 px-4 py-3 text-sm text-slate-950">
-              Already done. Everyone is in sync.
-              <p className="mt-1 text-right text-[11px] text-slate-700">10:23</p>
+            <div className="ml-auto max-w-[82%] rounded-lg bg-[#0c6875] px-3 py-2 text-sm text-white">
+              Yes, I will send the details now.
             </div>
-            <div className="ml-auto max-w-[78%] rounded-2xl rounded-br-md bg-teal-300 px-4 py-3 text-sm text-slate-950">
-              Messages are arriving in realtime too.
-              <p className="mt-1 text-right text-[11px] text-slate-700">10:24</p>
+            <div className="max-w-[82%] rounded-lg bg-[#eef3f2] px-3 py-2 text-sm">
+              Perfect. See you there!
             </div>
           </div>
-
-          <div className="mt-6 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-400">
-            Type a message...
-            <Send size={16} className="ml-auto text-teal-200" />
+          <div className="border-t border-[#d8e3e1] p-3">
+            <div className="flex items-center gap-2 rounded-md border border-[#c9d8d5] px-3 py-2 text-xs text-[#71898d]">
+              Type a message...
+              <Send size={15} className="ml-auto text-[#0c6875]" />
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
@@ -276,31 +333,16 @@ function ProductPreview({ large = false }: { large?: boolean }) {
 function PreviewConversation({
   name,
   text,
-  active = false,
-  group = false
+  active = false
 }: {
   name: string;
   text: string;
   active?: boolean;
-  group?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-2xl border px-3 py-3 ${
-        active
-          ? "border-teal-300/30 bg-teal-300/10"
-          : "border-white/10 bg-white/[0.03]"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        {group ? (
-          <span className="rounded bg-indigo-300/10 px-1.5 py-0.5 text-[10px] uppercase text-indigo-200">
-            Group
-          </span>
-        ) : null}
-        <p className="truncate text-sm font-medium">{name}</p>
-      </div>
-      <p className="mt-1 truncate text-xs text-slate-400">{text}</p>
+    <div className={`border-b border-[#d8e3e1] px-2 py-3 ${active ? "bg-white" : ""}`}>
+      <p className="truncate text-sm font-semibold">{name}</p>
+      <p className="mt-1 truncate text-xs text-[#71898d]">{text}</p>
     </div>
   );
 }
