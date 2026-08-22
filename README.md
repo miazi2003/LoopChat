@@ -201,6 +201,7 @@ Animations are deliberately short, run once, and use transform/opacity. Section 
 - Message history was observed newest-first; the service reverses a copy.
 - REST messages use `_id` and ISO dates; Socket messages use `id` and numeric timestamps.
 - The backend accepted an empty REST message; the UI blocks empty and whitespace-only text.
+- The provided user-search endpoint appeared case-sensitive for name queries. LoopChat queries a small set of casing variants and merges and deduplicates the results so user-entered capitalization does not affect normal search UX.
 - A partial phone query such as `016` returned no result in one observed test.
 - An invalid REST message conversation returned `null`; its status was not recorded.
 
