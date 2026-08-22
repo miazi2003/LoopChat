@@ -66,8 +66,8 @@ The project intentionally avoids unnecessary state-management libraries. React s
 ### Installation
 
 ```bash
-git clone <repository-url>
-cd <project-folder>
+git clone https://github.com/miazi2003/LoopChat.git
+cd LoopChat
 npm install
 ```
 
