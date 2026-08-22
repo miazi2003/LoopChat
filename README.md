@@ -244,7 +244,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-There is no automated test suite. See `AUDIT_REPORT.md` for the exact validation results and the two-user manual QA checklist, and `INTERVIEW_PREP.md` for project-specific interview explanations.
+There is currently no automated test suite. Core realtime, group, responsive, and auto-scroll flows were verified manually during development.
 
 ## Project Structure
 
